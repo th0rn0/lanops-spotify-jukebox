@@ -15,12 +15,12 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-var redirectURI string
+var redirectURI = "http://localhost:8888/callback"
 var deviceID spotify.ID
 
 var (
 	auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL(redirectURI),
+		spotifyauth.WithRedirectURL("http://localhost:8888/callback"),
 		spotifyauth.WithScopes(spotifyauth.ScopeUserReadCurrentlyPlaying, spotifyauth.ScopeUserReadPlaybackState, spotifyauth.ScopeUserModifyPlaybackState),
 	)
 	// ch    = make(chan *spotify.Client)
@@ -35,7 +35,6 @@ func main() {
 
 	r := gin.Default()
 
-	redirectURI = os.Getenv("CALLBACK_URL")
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
 	// Routes
@@ -151,22 +150,21 @@ func handleSearch(c *gin.Context) {
 	}
 	fmt.Print(results)
 
-	searchResults := []TrackResult{}
+	searchResults := SearchResult{}
 
-	// // handle artist results
-	// if results.Artists != nil {
-	// 	fmt.Println("Artists:")
-	// 	for _, item := range results.Albums.Albums {
-	// 		artistInfo := artistResult{
-	// 			Name: item.Name,
-	// 			ID:   item.ID.String(),
-	// 		}
-
-	// 		searchResults = append(searchResults, artistInfo)
-	// 		fmt.Println(artistInfo)
-	// 		fmt.Println("   ", item.Name)
-	// 	}
-	// }
+	// handle artist results
+	if results.Artists != nil {
+		fmt.Println("Artists:")
+		for _, item := range results.Artists.Artists {
+			artistInfo := ArtistResult{
+				Name: item.Name,
+				ID:   item.ID.String(),
+			}
+			searchResults.ArtistResults = append(searchResults.ArtistResults, artistInfo)
+			fmt.Println(artistInfo)
+			fmt.Println("   ", item.Name)
+		}
+	}
 
 	// handle song results
 	if results.Tracks != nil {
@@ -177,8 +175,7 @@ func handleSearch(c *gin.Context) {
 				Artist: item.Artists[0].Name,
 				ID:     item.ID.String(),
 			}
-
-			searchResults = append(searchResults, trackInfo)
+			searchResults.TrackResults = append(searchResults.TrackResults, trackInfo)
 			fmt.Println(trackInfo)
 			fmt.Println("   ", item.Name)
 		}

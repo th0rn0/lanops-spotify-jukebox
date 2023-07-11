@@ -11,9 +11,9 @@ type LoginToken struct {
 
 // Outputs
 type SearchResult struct {
-	PlaylistResult PlaylistResult `json:"playlist"`
-	ArtistResult   ArtistResult   `json:"artist"`
-	TrackResult    TrackResult    `json:"track"`
+	PlaylistResults []PlaylistResult `json:"playlist"`
+	ArtistResults   []ArtistResult   `json:"artist"`
+	TrackResults    []TrackResult    `json:"track"`
 }
 
 type PlaylistResult struct {
