@@ -13,46 +13,59 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/zmb3/spotify/v2"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-var redirectURI = "http://localhost:8888/callback"
-var deviceID spotify.ID
-
 var (
-	auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL("http://localhost:8888/callback"),
+	deviceID    spotify.ID
+	db          *gorm.DB
+	redirectURI = "http://localhost:8888/callback"
+	auth        = spotifyauth.New(
+		spotifyauth.WithRedirectURL(redirectURI), // DEBUG - pull in via env
 		spotifyauth.WithScopes(spotifyauth.ScopeUserReadCurrentlyPlaying, spotifyauth.ScopeUserReadPlaybackState, spotifyauth.ScopeUserModifyPlaybackState),
 	)
 	// ch    = make(chan *spotify.Client)
-	state = "abc123"
+	state = "spotifyJukeBox"
 )
 
 func main() {
+	// Load Env
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	r := gin.Default()
+	// Load Database
+	db, err = gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	// Migrate the schema
+	db.AutoMigrate(&Song{})
 
+	// Set Device ID
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
-	// Routes
+	// Start Router
+	r := gin.Default()
+
+	// Set Routes
 	r.GET("/login", serveLoginLink)
 	r.POST("/player/:action", handlePlayer)
 	r.GET("/search/:searchTerm", handleSearch)
 	r.GET("/callback", completeAuth)
+	r.GET("/votes", getVotes)
+	r.POST("/songs/:action", handleSong)
 
 	r.Run(":8888")
 }
 
 func handlePlayer(c *gin.Context) {
-
-	fmt.Println(os.Getenv("SPOTIFY_ID"))
-	fmt.Println(deviceID)
-
 	var playerSongInput PlayerSongInput
 	var playerState *spotify.PlayerState
+	var err error
 
 	authHeader := c.Request.Header.Get("authorization")
 	authToken := strings.Split(authHeader, " ")[1]
@@ -70,7 +83,6 @@ func handlePlayer(c *gin.Context) {
 		DeviceID: &deviceID,
 	}
 
-	var err error
 	switch action {
 	case "play":
 		err = client.PlayOpt(ctx, &playerOpt)
@@ -85,7 +97,7 @@ func handlePlayer(c *gin.Context) {
 		err = client.ShuffleOpt(ctx, playerState.ShuffleState, &playerOpt)
 	case "song":
 		if err := c.ShouldBindJSON(&playerSongInput); err != nil {
-			c.JSON(http.StatusInternalServerError, "asdasd")
+			c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
 			return
 		}
 		if playerSongInput.URI == "" {
@@ -181,4 +193,42 @@ func handleSearch(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, searchResults)
+}
+
+func getVotes(c *gin.Context) {
+	// fmt.Println("asdasdasd")
+	// var songQueue Song
+	// result := db.Find(&songQueue) // find product with integer primary key
+	// fmt.Println(&result.RowsAffected)
+}
+
+func handleSong(c *gin.Context) {
+	var handleSongInput HandleSongInput
+	var result *gorm.DB
+	var err error
+
+	action := c.Param("action")
+
+	if err := c.ShouldBindJSON(&handleSongInput); err != nil {
+		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
+		return
+	}
+	if handleSongInput.URI == "" {
+		c.JSON(http.StatusInternalServerError, "URI is required.")
+		return
+	}
+
+	switch action {
+	case "add":
+		result = db.Create(&Song{URI: handleSongInput.URI, Name: "asdasd", Votes: 1})
+	case "remove":
+		result = db.Where("uri LIKE  ?", "%"+handleSongInput.URI+"%").Delete(&Song{})
+	}
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, result.Error)
+		log.Print(err)
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/html")
+	c.JSON(http.StatusAccepted, "Ok")
 }

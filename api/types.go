@@ -1,6 +1,9 @@
 package main
 
-import "github.com/zmb3/spotify/v2"
+import (
+	"github.com/zmb3/spotify/v2"
+	"gorm.io/gorm"
+)
 
 type LoginToken struct {
 	AccessToken  string `json:"access_token"`
@@ -35,4 +38,16 @@ type TrackResult struct {
 // Inputs
 type PlayerSongInput struct {
 	URI spotify.URI `json:"uri"`
+}
+
+type HandleSongInput struct {
+	URI spotify.URI `json:"uri"`
+}
+
+// Models
+type Song struct {
+	gorm.Model
+	URI   spotify.URI
+	Name  string
+	Votes int
 }
