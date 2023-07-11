@@ -28,14 +28,11 @@ var (
 
 func main() {
 	r := gin.Default()
-	r.LoadHTMLGlob("templates/*")
 
+	// Routes
 	r.GET("/login", serveLoginLink)
-
 	r.POST("/player/:action", handlePlayer)
-
 	r.GET("/search/:searchTerm", handleSearch)
-
 	r.GET("/callback", completeAuth)
 
 	r.Run(":8888")
