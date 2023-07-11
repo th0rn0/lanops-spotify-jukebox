@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/joho/godotenv"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2"
 
@@ -14,8 +15,8 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-var redirectURI = os.Getenv("CALLBACK_URL")
-var deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
+var redirectURI string
+var deviceID spotify.ID
 
 var (
 	auth = spotifyauth.New(
@@ -27,7 +28,15 @@ var (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	r := gin.Default()
+
+	redirectURI = os.Getenv("CALLBACK_URL")
+	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
 	// Routes
 	r.GET("/login", serveLoginLink)
@@ -39,13 +48,12 @@ func main() {
 }
 
 func handlePlayer(c *gin.Context) {
+
+	fmt.Println(os.Getenv("SPOTIFY_ID"))
+	fmt.Println(deviceID)
+
 	var playerSongInput PlayerSongInput
 	var playerState *spotify.PlayerState
-
-	if err := c.ShouldBindJSON(&playerSongInput); err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
 
 	authHeader := c.Request.Header.Get("authorization")
 	authToken := strings.Split(authHeader, " ")[1]
@@ -63,8 +71,6 @@ func handlePlayer(c *gin.Context) {
 		DeviceID: &deviceID,
 	}
 
-	log.Print(playerOpt)
-
 	var err error
 	switch action {
 	case "play":
@@ -79,6 +85,10 @@ func handlePlayer(c *gin.Context) {
 		playerState.ShuffleState = !playerState.ShuffleState
 		err = client.ShuffleOpt(ctx, playerState.ShuffleState, &playerOpt)
 	case "song":
+		if err := c.ShouldBindJSON(&playerSongInput); err != nil {
+			c.JSON(http.StatusInternalServerError, "asdasd")
+			return
+		}
 		if playerSongInput.URI == "" {
 			c.JSON(http.StatusInternalServerError, "URI is required.")
 			return
