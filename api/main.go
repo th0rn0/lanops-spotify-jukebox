@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/mattn/go-sqlite3"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2"
 
@@ -19,13 +20,10 @@ import (
 )
 
 var (
-	deviceID    spotify.ID
-	db          *gorm.DB
-	redirectURI = "http://localhost:8888/callback"
-	auth        = spotifyauth.New(
-		spotifyauth.WithRedirectURL(redirectURI), // DEBUG - pull in via env
-		spotifyauth.WithScopes(spotifyauth.ScopeUserReadCurrentlyPlaying, spotifyauth.ScopeUserReadPlaybackState, spotifyauth.ScopeUserModifyPlaybackState),
-	)
+	deviceID spotify.ID
+	db       *gorm.DB
+	auth     *spotifyauth.Authenticator
+
 	// ch    = make(chan *spotify.Client)
 	state = "spotifyJukeBox"
 )
@@ -37,13 +35,19 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	// Load Spotify API
+	auth = spotifyauth.New(
+		spotifyauth.WithRedirectURL(os.Getenv("CALLBACK_URL")),
+		spotifyauth.WithScopes(spotifyauth.ScopeUserReadCurrentlyPlaying, spotifyauth.ScopeUserReadPlaybackState, spotifyauth.ScopeUserModifyPlaybackState),
+	)
+
 	// Load Database
 	db, err = gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 	// Migrate the schema
-	db.AutoMigrate(&Song{})
+	db.AutoMigrate(&Track{})
 
 	// Set Device ID
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
@@ -55,8 +59,10 @@ func main() {
 	r.GET("/login", serveLoginLink)
 	r.POST("/player/:action", handlePlayer)
 	r.GET("/search/:searchTerm", handleSearch)
-	r.GET("/callback", completeAuth)
+	r.GET("/callback", handleAuth)
 	r.GET("/votes", getVotes)
+
+	r.GET("/songs", getSongs)
 	r.POST("/songs/:action", handleSong)
 
 	r.Run(":8888")
@@ -114,7 +120,7 @@ func handlePlayer(c *gin.Context) {
 		log.Print(err)
 	}
 
-	c.Writer.Header().Set("Content-Type", "text/html")
+	// c.Writer.Header().Set("Content-Type", "text/html")
 	c.JSON(http.StatusAccepted, "Ok")
 }
 
@@ -123,7 +129,7 @@ func serveLoginLink(c *gin.Context) {
 	c.JSON(http.StatusOK, url)
 }
 
-func completeAuth(c *gin.Context) {
+func handleAuth(c *gin.Context) {
 	tok, err := auth.Token(c.Request.Context(), state, c.Request)
 	if err != nil {
 		log.Fatal(err)
@@ -155,24 +161,25 @@ func handleSearch(c *gin.Context) {
 	searchTerm := c.Param("searchTerm")
 	fmt.Println(searchTerm)
 
-	results, err := client.Search(ctx, searchTerm, spotify.SearchTypeArtist|spotify.SearchTypeTrack)
+	// results, err := client.Search(ctx, searchTerm, spotify.SearchTypeArtist|spotify.SearchTypeTrack)
+	results, err := client.Search(ctx, searchTerm, spotify.SearchTypeTrack)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Print(results)
 
-	searchResults := SearchResult{}
+	searchOutput := SearchOutput{}
 
 	// handle artist results
 	if results.Artists != nil {
 		fmt.Println("Artists:")
 		for _, item := range results.Artists.Artists {
-			artistInfo := ArtistResult{
+			artistInfo := ArtistSearchOutput{
 				Name: item.Name,
 				ID:   item.ID.String(),
 			}
-			searchResults.ArtistResults = append(searchResults.ArtistResults, artistInfo)
+			searchOutput.Artists = append(searchOutput.Artists, artistInfo)
 			fmt.Println(artistInfo)
 			fmt.Println("   ", item.Name)
 		}
@@ -182,31 +189,32 @@ func handleSearch(c *gin.Context) {
 	if results.Tracks != nil {
 		fmt.Println("Tracks:")
 		for _, item := range results.Tracks.Tracks {
-			trackInfo := TrackResult{
+			trackInfo := TrackSearchOutput{
 				Name:   item.Name,
 				Artist: item.Artists[0].Name,
 				ID:     item.ID.String(),
 			}
-			searchResults.TrackResults = append(searchResults.TrackResults, trackInfo)
+			searchOutput.Tracks = append(searchOutput.Tracks, trackInfo)
 			fmt.Println(trackInfo)
 			fmt.Println("   ", item.Name)
 		}
 	}
-	c.JSON(http.StatusOK, searchResults)
-}
-
-func getVotes(c *gin.Context) {
-	// fmt.Println("asdasdasd")
-	// var songQueue Song
-	// result := db.Find(&songQueue) // find product with integer primary key
-	// fmt.Println(&result.RowsAffected)
+	c.JSON(http.StatusOK, searchOutput)
 }
 
 func handleSong(c *gin.Context) {
+	authHeader := c.Request.Header.Get("authorization")
+	authToken := strings.Split(authHeader, " ")[1]
+
+	authInput := oauth2.Token{
+		AccessToken: authToken,
+	}
+
 	var handleSongInput HandleSongInput
 	var result *gorm.DB
-	var err error
+	// var err error
 
+	ctx := c.Request.Context()
 	action := c.Param("action")
 
 	if err := c.ShouldBindJSON(&handleSongInput); err != nil {
@@ -220,15 +228,46 @@ func handleSong(c *gin.Context) {
 
 	switch action {
 	case "add":
-		result = db.Create(&Song{URI: handleSongInput.URI, Name: "asdasd", Votes: 1})
+		// Get Track Info
+		client := spotify.New(auth.Client(c.Request.Context(), &authInput))
+		trackId := strings.Replace(string(handleSongInput.URI), "spotify:track:", "", -1)
+		track, err := client.GetTrack(ctx, spotify.ID(trackId))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err)
+			return
+		}
+		result = db.Create(&Track{URI: handleSongInput.URI, Name: track.Name, Artist: track.Artists[0].Name, Votes: 1})
 	case "remove":
-		result = db.Where("uri LIKE  ?", "%"+handleSongInput.URI+"%").Delete(&Song{})
+		fmt.Println("we are here")
+		track := db.First(&Track{}, Track{URI: handleSongInput.URI})
+		// DEBUG - bit hacky - maybe do some better error handling instead of assuming no record found
+		if track.Error != nil {
+			c.JSON(http.StatusNotFound, "Track Not Found")
+			return
+		}
+		result = db.Unscoped().Delete(&Track{}, Track{URI: handleSongInput.URI})
 	}
 	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, result.Error)
-		log.Print(err)
-	}
+		if result.Error.(sqlite3.Error).Code == 19 {
+			c.JSON(http.StatusBadRequest, "Song Already Exists")
+			return
+		}
 
-	c.Writer.Header().Set("Content-Type", "text/html")
+		c.JSON(http.StatusInternalServerError, "Something Went Wrong. Contact an Adult")
+	}
 	c.JSON(http.StatusAccepted, "Ok")
+}
+
+// Getters
+func getVotes(c *gin.Context) {
+	// fmt.Println("asdasdasd")
+	// var songQueue Song
+	// result := db.Find(&songQueue) // find product with integer primary key
+	// fmt.Println(&result.RowsAffected)
+}
+
+func getSongs(c *gin.Context) {
+	var tracks []Track
+	result := db.Find(&tracks)
+	c.JSON(http.StatusAccepted, result)
 }
