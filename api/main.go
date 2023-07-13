@@ -20,9 +20,10 @@ import (
 )
 
 var (
-	deviceID spotify.ID
-	db       *gorm.DB
-	auth     *spotifyauth.Authenticator
+	deviceID     spotify.ID
+	db           *gorm.DB
+	auth         *spotifyauth.Authenticator
+	minimumVotes int64
 
 	// ch    = make(chan *spotify.Client)
 	state = "spotifyJukeBox"
@@ -52,26 +53,35 @@ func main() {
 	// Set Device ID
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
+	// Set Minimum Votes
+	minimumVotes = 1
+
 	// Start Router
 	r := gin.Default()
 
 	// Set Routes
 	r.GET("/login", serveLoginLink)
+
 	r.POST("/player/:action", handlePlayer)
+
 	r.GET("/search/:searchTerm", handleSearch)
+
 	r.GET("/callback", handleAuth)
-	r.GET("/votes", getVotes)
+
+	r.POST("/votes/:action", handleVote)
 
 	r.GET("/songs", getSongs)
+	r.GET("/songs/:songUri", getSongByUri)
 	r.POST("/songs/:action", handleSong)
 
 	r.Run(":8888")
 }
 
 func handlePlayer(c *gin.Context) {
-	var playerSongInput PlayerSongInput
+	var handlePlayerInput HandlePlayerInput
 	var playerState *spotify.PlayerState
 	var err error
+	var track Track
 
 	authHeader := c.Request.Header.Get("authorization")
 	authToken := strings.Split(authHeader, " ")[1]
@@ -83,6 +93,8 @@ func handlePlayer(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
+
+	// DEBUG
 	fmt.Println("Got request for:", action)
 
 	playerOpt := spotify.PlayOptions{
@@ -90,6 +102,24 @@ func handlePlayer(c *gin.Context) {
 	}
 
 	switch action {
+	case "start":
+		playerState, _ = client.PlayerState(ctx)
+		if playerState.Playing {
+			c.JSON(http.StatusBadRequest, "Player Already Started")
+			return
+		}
+		// DEBUG - Handle Error
+		track, err = getNextSongByVotes()
+		fmt.Println(track)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		playerOpt = spotify.PlayOptions{
+			DeviceID: &deviceID,
+			URIs:     []spotify.URI{track.URI},
+		}
+		err = client.PlayOpt(ctx, &playerOpt)
 	case "play":
 		err = client.PlayOpt(ctx, &playerOpt)
 	case "pause":
@@ -102,25 +132,26 @@ func handlePlayer(c *gin.Context) {
 		playerState.ShuffleState = !playerState.ShuffleState
 		err = client.ShuffleOpt(ctx, playerState.ShuffleState, &playerOpt)
 	case "song":
-		if err := c.ShouldBindJSON(&playerSongInput); err != nil {
+		if err := c.ShouldBindJSON(&handlePlayerInput); err != nil {
 			c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
 			return
 		}
-		if playerSongInput.URI == "" {
+		if handlePlayerInput.URI == "" {
 			c.JSON(http.StatusInternalServerError, "URI is required.")
 			return
 		}
 		playerOpt = spotify.PlayOptions{
 			DeviceID: &deviceID,
-			URIs:     []spotify.URI{playerSongInput.URI},
+			URIs:     []spotify.URI{handlePlayerInput.URI},
 		}
 		err = client.PlayOpt(ctx, &playerOpt)
 	}
+	// Debug - do proper error handling
 	if err != nil {
 		log.Print(err)
+		c.JSON(http.StatusInternalServerError, err)
 	}
 
-	// c.Writer.Header().Set("Content-Type", "text/html")
 	c.JSON(http.StatusAccepted, "Ok")
 }
 
@@ -211,8 +242,7 @@ func handleSong(c *gin.Context) {
 	}
 
 	var handleSongInput HandleSongInput
-	var result *gorm.DB
-	// var err error
+	var returnStatus = http.StatusCreated
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
@@ -236,38 +266,134 @@ func handleSong(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, err)
 			return
 		}
-		result = db.Create(&Track{URI: handleSongInput.URI, Name: track.Name, Artist: track.Artists[0].Name, Votes: 1})
+		if err := db.Create(&Track{URI: handleSongInput.URI, Name: track.Name, Artist: track.Artists[0].Name, Votes: 1}).Error; err != nil {
+			if err.(sqlite3.Error).Code == 19 {
+				c.JSON(http.StatusBadRequest, "Song Already Exists")
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
 	case "remove":
-		fmt.Println("we are here")
-		track := db.First(&Track{}, Track{URI: handleSongInput.URI})
-		// DEBUG - bit hacky - maybe do some better error handling instead of assuming no record found
-		if track.Error != nil {
+		if err := db.First(&Track{}, Track{URI: handleSongInput.URI}).Error; err != nil {
 			c.JSON(http.StatusNotFound, "Track Not Found")
 			return
 		}
-		result = db.Unscoped().Delete(&Track{}, Track{URI: handleSongInput.URI})
-	}
-	if result.Error != nil {
-		if result.Error.(sqlite3.Error).Code == 19 {
-			c.JSON(http.StatusBadRequest, "Song Already Exists")
+		if err := db.Unscoped().Delete(&Track{}, Track{URI: handleSongInput.URI}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
-
-		c.JSON(http.StatusInternalServerError, "Something Went Wrong. Contact an Adult")
+		returnStatus = http.StatusAccepted
 	}
-	c.JSON(http.StatusAccepted, "Ok")
+	// DEBUG - make this the proper response http.StatusCreated
+	c.JSON(returnStatus, "Ok")
+}
+
+func handleVote(c *gin.Context) {
+	var handleVoteInput HandleSongInput
+	var playerState *spotify.PlayerState
+	var track Track
+
+	authHeader := c.Request.Header.Get("authorization")
+	authToken := strings.Split(authHeader, " ")[1]
+
+	authInput := oauth2.Token{
+		AccessToken: authToken,
+	}
+	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
+
+	ctx := c.Request.Context()
+	action := c.Param("action")
+
+	if err := c.ShouldBindJSON(&handleVoteInput); err != nil {
+		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
+		return
+	}
+	if handleVoteInput.URI == "" {
+		c.JSON(http.StatusInternalServerError, "URI is required.")
+		return
+	}
+
+	if err := db.First(&track, Track{URI: handleVoteInput.URI}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, "Track Not Found")
+		return
+	}
+
+	switch action {
+	case "add":
+		if err := db.Model(&track).Update("votes", track.Votes+1).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	case "remove":
+		playerState, _ = client.PlayerState(ctx)
+		if track.Votes == minimumVotes {
+			if err := db.Unscoped().Delete(&Track{}, Track{URI: handleVoteInput.URI}).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, err)
+				return
+			}
+			// If currently playing is voted off - play next in queue
+			fmt.Println(playerState.PlaybackContext)
+			if playerState.Playing && playerState.PlaybackContext.URI == track.URI {
+				newTrack, _ := getNextSongByVotes()
+				playerOpt := spotify.PlayOptions{
+					DeviceID: &deviceID,
+					URIs:     []spotify.URI{newTrack.URI},
+				}
+				err := client.PlayOpt(ctx, &playerOpt)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, err)
+					return
+				}
+			}
+		} else {
+			if err := db.Model(&track).Update("votes", track.Votes-1).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, err)
+				return
+			}
+		}
+
+	}
+	c.JSON(http.StatusOK, "Ok")
 }
 
 // Getters
-func getVotes(c *gin.Context) {
-	// fmt.Println("asdasdasd")
-	// var songQueue Song
-	// result := db.Find(&songQueue) // find product with integer primary key
-	// fmt.Println(&result.RowsAffected)
+func getSongByUri(c *gin.Context) {
+	var track Track
+	if err := db.First(&track, Track{URI: spotify.URI(c.Param("songUri"))}).Error; err != nil {
+		// DEBUG - Correct Responses
+		c.JSON(http.StatusInternalServerError, "Track Not Found")
+		return
+	}
+	c.JSON(http.StatusAccepted, track)
 }
 
 func getSongs(c *gin.Context) {
 	var tracks []Track
-	result := db.Find(&tracks)
-	c.JSON(http.StatusAccepted, result)
+	// DEBUG - ORDER BY NEEDED
+	if err := db.Find(&tracks).Order("votes ASC").Error; err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, tracks)
+}
+
+// func getSongNext() {
+
+// }
+
+// func getSongCurrent() {
+
+// }
+
+// HELPERS
+
+func getNextSongByVotes() (Track, error) {
+	var track Track
+
+	// if err := db.Raw("SELECT MAX(votes) FROM tracks").First(&track).Error; err != nil {
+	if err := db.Raw("SELECT * FROM tracks WHERE votes = ( SELECT MAX(votes) FROM tracks )").First(&track).Error; err != nil {
+		return track, err
+	}
+	return track, nil
 }
