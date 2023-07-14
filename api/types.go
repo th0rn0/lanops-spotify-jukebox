@@ -34,6 +34,10 @@ type TrackSearchOutput struct {
 	ID     string `json:"id"`
 }
 
+type GetDeviceIdsOutput struct {
+	PlayerDevices []spotify.PlayerDevice `json:"devices"`
+}
+
 // Inputs
 type HandlePlayerInput struct {
 	URI spotify.URI `json:"uri"`

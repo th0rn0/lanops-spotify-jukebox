@@ -74,6 +74,8 @@ func main() {
 	r.GET("/songs/:songUri", getSongByUri)
 	r.POST("/songs/:action", handleSong)
 
+	r.GET("/device/all", getDeviceIds)
+
 	r.Run(":8888")
 }
 
@@ -369,6 +371,25 @@ func handleVote(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, "Ok")
+}
+
+func getDeviceIds(c *gin.Context) {
+	authHeader := c.Request.Header.Get("authorization")
+	authToken := strings.Split(authHeader, " ")[1]
+
+	authInput := oauth2.Token{
+		AccessToken: authToken,
+	}
+	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
+
+	ctx := c.Request.Context()
+	devices, err := client.PlayerDevices(ctx)
+	// client.Get
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, devices)
 }
 
 // Getters
