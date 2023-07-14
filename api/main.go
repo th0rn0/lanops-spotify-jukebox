@@ -240,9 +240,12 @@ func handleSong(c *gin.Context) {
 	authInput := oauth2.Token{
 		AccessToken: authToken,
 	}
+	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
 	var handleSongInput HandleSongInput
+	var playerState *spotify.PlayerState
 	var returnStatus = http.StatusCreated
+	var track Track
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
@@ -259,7 +262,6 @@ func handleSong(c *gin.Context) {
 	switch action {
 	case "add":
 		// Get Track Info
-		client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 		trackId := strings.Replace(string(handleSongInput.URI), "spotify:track:", "", -1)
 		track, err := client.GetTrack(ctx, spotify.ID(trackId))
 		if err != nil {
@@ -275,13 +277,27 @@ func handleSong(c *gin.Context) {
 			return
 		}
 	case "remove":
-		if err := db.First(&Track{}, Track{URI: handleSongInput.URI}).Error; err != nil {
+		playerState, _ = client.PlayerState(ctx)
+		if err := db.First(&track, Track{URI: handleSongInput.URI}).Error; err != nil {
 			c.JSON(http.StatusNotFound, "Track Not Found")
 			return
 		}
-		if err := db.Unscoped().Delete(&Track{}, Track{URI: handleSongInput.URI}).Error; err != nil {
+		if err := db.Unscoped().Delete(&track).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 			return
+		}
+		// If currently playing is removed - play next in queue
+		if playerState.Playing && playerState.Item.URI == track.URI {
+			newTrack, _ := getNextSongByVotes()
+			playerOpt := spotify.PlayOptions{
+				DeviceID: &deviceID,
+				URIs:     []spotify.URI{newTrack.URI},
+			}
+			err := client.PlayOpt(ctx, &playerOpt)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, err)
+				return
+			}
 		}
 		returnStatus = http.StatusAccepted
 	}
@@ -327,14 +343,13 @@ func handleVote(c *gin.Context) {
 		}
 	case "remove":
 		playerState, _ = client.PlayerState(ctx)
-		if track.Votes == minimumVotes {
+		if track.Votes <= minimumVotes {
 			if err := db.Unscoped().Delete(&Track{}, Track{URI: handleVoteInput.URI}).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, err)
 				return
 			}
 			// If currently playing is voted off - play next in queue
-			fmt.Println(playerState.PlaybackContext)
-			if playerState.Playing && playerState.PlaybackContext.URI == track.URI {
+			if playerState.Playing && playerState.Item.URI == track.URI {
 				newTrack, _ := getNextSongByVotes()
 				playerOpt := spotify.PlayOptions{
 					DeviceID: &deviceID,
@@ -352,7 +367,6 @@ func handleVote(c *gin.Context) {
 				return
 			}
 		}
-
 	}
 	c.JSON(http.StatusOK, "Ok")
 }
@@ -362,7 +376,7 @@ func getSongByUri(c *gin.Context) {
 	var track Track
 	if err := db.First(&track, Track{URI: spotify.URI(c.Param("songUri"))}).Error; err != nil {
 		// DEBUG - Correct Responses
-		c.JSON(http.StatusInternalServerError, "Track Not Found")
+		c.JSON(http.StatusNotFound, "Track Not Found")
 		return
 	}
 	c.JSON(http.StatusAccepted, track)
