@@ -15,10 +15,11 @@ import (
 )
 
 var (
-	deviceID     spotify.ID
-	db           *gorm.DB
-	auth         *spotifyauth.Authenticator
-	minimumVotes int64
+	deviceID         spotify.ID
+	db               *gorm.DB
+	auth             *spotifyauth.Authenticator
+	minimumVotes     int64
+	fallbackPlaylist FallbackPlaylist
 
 	// ch    = make(chan *spotify.Client)
 	state = "spotifyJukeBox"
@@ -49,11 +50,17 @@ func main() {
 	// Set Device ID
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
+	fallbackPlaylist = FallbackPlaylist{
+		URI:    spotify.URI(os.Getenv("FALLBACK_PLAYLIST")),
+		Active: false,
+	}
 	// Set Minimum Votes
 	minimumVotes = 1
 
 	// Start Router
 	r := gin.Default()
+
+	// go pollSpotify()
 
 	// Set Routes
 	r.GET("/login", serveLoginLink)
@@ -70,7 +77,10 @@ func main() {
 	r.GET("/songs/:songUri", getSongByUri)
 	r.POST("/songs/:action", handleSong)
 
-	r.GET("/device/all", getDeviceIds)
+	r.GET("/device/all", getAllDeviceIds)
+	r.GET("/device", getCurrentDeviceId)
+	r.POST("/device", setDeviceId)
 
 	r.Run(":8888")
+
 }

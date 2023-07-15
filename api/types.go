@@ -11,6 +11,11 @@ type LoginToken struct {
 	Expiry       string `json:"expiry"`
 }
 
+type FallbackPlaylist struct {
+	URI    spotify.URI
+	Active bool
+}
+
 // Outputs
 type SearchOutput struct {
 	Playlists []PlaylistSearchOutput `json:"playlist"`
@@ -73,10 +78,18 @@ type Track struct {
 	Images []TrackImage `gorm:"foreignKey:URI;references:URI" json:"images"`
 }
 
+// DEBUG - remove images on cascade
 type TrackImage struct {
 	ID     uint   `gorm:"primarykey"`
 	Height int    `json:"height"`
 	Width  int    `json:"width"`
 	URL    string `json:"url"`
 	URI    spotify.URI
+}
+
+type Device struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Active bool   `json:"is_active"`
 }

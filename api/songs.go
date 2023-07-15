@@ -63,6 +63,7 @@ func handleSong(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
+		// fallbackPlaylist.Active = false
 	case "remove":
 		playerState, _ = client.PlayerState(ctx)
 		if err := db.First(&track, Track{URI: handleSongInput.URI}).Error; err != nil {
