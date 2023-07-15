@@ -29,13 +29,22 @@ type ArtistSearchOutput struct {
 }
 
 type TrackSearchOutput struct {
-	Name   string `json:"name"`
-	Artist string `json:"artist"`
-	ID     string `json:"id"`
+	Name   string          `json:"name"`
+	Artist string          `json:"artist"`
+	ID     string          `json:"id"`
+	Images []spotify.Image `json:"images"`
 }
 
 type GetDeviceIdsOutput struct {
 	PlayerDevices []spotify.PlayerDevice `json:"devices"`
+}
+
+type GetTrackOutput struct {
+	URI    spotify.URI     `json:"uri"`
+	Name   string          `json:"name"`
+	Artist string          `json:"artist"`
+	Votes  int64           `json:"votes"`
+	Images []spotify.Image `json:"images"`
 }
 
 // Inputs
@@ -57,8 +66,17 @@ type GetSongByUriInput struct {
 
 // Models
 type Track struct {
-	URI    spotify.URI `gorm:"primaryKey" json:"uri"`
-	Name   string      `json:"name"`
-	Artist string      `json:"artist"`
-	Votes  int64       `json:"votes"`
+	URI    spotify.URI  `gorm:"primaryKey" json:"uri"`
+	Name   string       `json:"name"`
+	Artist string       `json:"artist"`
+	Votes  int64        `json:"votes"`
+	Images []TrackImage `gorm:"foreignKey:URI;references:URI" json:"images"`
+}
+
+type TrackImage struct {
+	ID     uint   `gorm:"primarykey"`
+	Height int    `json:"height"`
+	Width  int    `json:"width"`
+	URL    string `json:"url"`
+	URI    spotify.URI
 }
