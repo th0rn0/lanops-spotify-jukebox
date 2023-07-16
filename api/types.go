@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/zmb3/spotify/v2"
+	"gorm.io/gorm"
 )
 
 type LoginToken struct {
@@ -79,7 +82,21 @@ type Track struct {
 	Images []TrackImage `gorm:"foreignKey:URI;references:URI" json:"images"`
 }
 
-// DEBUG - remove images on cascade
+// Updating data in same transaction
+func (t *Track) BeforeDelete(tx *gorm.DB) (err error) {
+	var trackImages []TrackImage
+	fmt.Println("attempted delete")
+	if err := tx.Where("uri = ?", t.URI).Find(&trackImages).Error; err != nil {
+		// DEBUG - handle error
+		fmt.Println(err)
+	}
+	for _, image := range trackImages {
+		fmt.Println(image.ID)
+		tx.Model(&TrackImage{}).Unscoped().Delete(&image)
+	}
+	return
+}
+
 type TrackImage struct {
 	ID     uint   `gorm:"primarykey"`
 	Height int    `json:"height"`
@@ -88,9 +105,9 @@ type TrackImage struct {
 	URI    spotify.URI
 }
 
-type Device struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Type   string `json:"type"`
-	Active bool   `json:"is_active"`
-}
+// type Device struct {
+// 	ID     string `json:"id"`
+// 	Name   string `json:"name"`
+// 	Type   string `json:"type"`
+// 	Active bool   `json:"is_active"`
+// }
