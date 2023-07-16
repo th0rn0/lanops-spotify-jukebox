@@ -46,6 +46,7 @@ func handleVote(c *gin.Context) {
 			return
 		}
 	case "remove":
+		// DEBUG - if votes at 1 then minimum votes wont work
 		playerState, _ = client.PlayerState(ctx)
 		if track.Votes <= minimumVotes {
 			if err := db.Unscoped().Delete(&Track{}, Track{URI: handleVoteInput.URI}).Error; err != nil {

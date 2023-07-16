@@ -42,6 +42,8 @@ func handlePlayer(c *gin.Context) {
 
 	switch action {
 	case "start":
+		// DEBUG - if no items in queue play fallback
+
 		playerState, _ = client.PlayerState(ctx)
 		if playerState.Playing {
 			c.JSON(http.StatusBadRequest, "Player Already Started")
@@ -54,6 +56,9 @@ func handlePlayer(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
+
+		//  DEBUG - Move these into pollSpotify
+		setCurrentTrackURI(track.URI)
 		setCurrentPlayOptions(spotify.PlayOptions{
 			DeviceID: &deviceID,
 			URIs:     []spotify.URI{track.URI},
@@ -118,7 +123,7 @@ func getAllDeviceIds(c *gin.Context) {
 func pollSpotify(authInput oauth2.Token) {
 	fmt.Println("here we go")
 
-	// var track Track
+	var track Track
 
 	// playerOpt := spotify.PlayOptions{
 	// 	DeviceID: &deviceID,
@@ -139,54 +144,89 @@ func pollSpotify(authInput oauth2.Token) {
 		fmt.Println("CURRENT SONG PROGRESS")
 		fmt.Println(playerState.Progress)
 
-		// If Fallback Playlist is active - check for new songs in queue
-		track, err := getNextSongByVotes()
-		if fallbackPlaylist.Active {
-			fmt.Println("fallback active")
-			if track.URI == currentTrackPlayOptions.URIs[0] && err != nil {
-				fmt.Println(err)
-				// DEBUG - hacky - just deleting so wont be able to vote off
-				if err := db.Unscoped().Delete(&track).Error; err != nil {
-					fmt.Println(err)
-				}
-				fmt.Println("No Queued Tracks - continuing with fallback playlist")
-			} else if track.URI != "" {
-				playerOpt := spotify.PlayOptions{
-					DeviceID: &deviceID,
-					URIs:     []spotify.URI{track.URI},
-				}
-				err = client.QueueSongOpt(context.Background(), spotify.ID(strings.Replace(string(track.URI), "spotify:track:", "", -1)), &playerOpt)
-				if err != nil {
-					fmt.Println(err)
-					fmt.Println("No Queued Tracks - continuing with fallback playlist")
-				}
-			}
-		}
+		// track, _ := getNextSongByVotes(playerState.Item.URI)
+		// Assume if no track - use fallback
+		// if err != nil {
 
-		// DEBUG - if CURRENT SONG PROGRESS = 0
+		// }
+		// if track.URI == "" {
+		// 	playerOpt := spotify.PlayOptions{
+		// 		DeviceID: &deviceID,
+		// 		URIs:     []spotify.URI{track.URI},
+		// 	}
+		// 	err = client.QueueSongOpt(context.Background(), spotify.ID(strings.Replace(string(track.URI), "spotify:track:", "", -1)), &playerOpt)
+		// 	if err != nil {
+		// 		fmt.Println(err)
+		// 		fmt.Println("QUEUED NEW SONG")
+		// 	}
+		// }
+		// if fallbackPlaylist.Active {
+		// 	fmt.Println("fallback active")
+		// 	if track.URI == currentTrackPlayOptions.URIs[0] && err != nil {
+		// 		fmt.Println(err)
+		// 		// DEBUG - hacky - just deleting so wont be able to vote off
+		// 		if err := db.Unscoped().Delete(&track).Error; err != nil {
+		// 			fmt.Println(err)
+		// 		}
+		// 		fmt.Println("No Queued Tracks - continuing with fallback playlist")
+		// 	} else if track.URI != "" {
+		// 		playerOpt := spotify.PlayOptions{
+		// 			DeviceID: &deviceID,
+		// 			URIs:     []spotify.URI{track.URI},
+		// 		}
+		// 		err = client.QueueSongOpt(context.Background(), spotify.ID(strings.Replace(string(track.URI), "spotify:track:", "", -1)), &playerOpt)
+		// 		if err != nil {
+		// 			fmt.Println(err)
+		// 			fmt.Println("QUEUED NEW SONG")
+		// 		}
+		// 	}
+		// }
+
+		// If Fallback Playlist is active we need to do a different check
+		// This is because there is slim chance the poll interval will match up
+		// with the end of the track during the fallback playlist.
 		if playerState.Progress == 0 {
 			fmt.Println("LOADING NEXT SONG")
 			// Remove the track
-			if err := db.First(&track, Track{URI: currentTrackPlayOptions.URIs[0]}).Error; err != nil {
-				fmt.Println(err)
-			}
-			if err := db.Unscoped().Delete(&track).Error; err != nil {
-				fmt.Println(err)
+			// DEBUG - if fallback dont run
+			if !fallbackPlaylist.Active {
+				fmt.Println("REMOVING TRACK FROM QUEUE: " + currentTrackURI)
+				if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
+					fmt.Println(err)
+				}
+				if err := db.Unscoped().Delete(&track).Error; err != nil {
+					fmt.Println(err)
+				}
 			}
 			// Get the next track
 			track, err = getNextSongByVotes()
-			fmt.Println(track)
 			// DEBUG - assume no more tracks - play backup playlist
+			// Send one random track from backup playlist. This is to check for new songs in queue
 			if err != nil {
-				fmt.Println("No More tracks - using fall back playlist")
-				playerOpt := spotify.PlayOptions{
-					DeviceID:        &deviceID,
-					PlaybackContext: &fallbackPlaylist.URI,
-				}
 				fallbackPlaylist.Active = true
+
+				// DEBUG - Set Random Offset - currently will only pull first 100 songs. Could set Limit higher?
+				// Get Random number for fallback playlist track
+				fallBackPlaylist, _ := client.GetPlaylistItems(context.Background(), fallbackPlaylist.ID)
+
+				rand.Seed(time.Now().UnixNano())
+				randomPlaylistItem := fallBackPlaylist.Items[(rand.Intn(len(fallBackPlaylist.Items)-1) + 1)]
+				setCurrentTrackURI(randomPlaylistItem.Track.Track.URI)
+
+				fmt.Println("No More Tracks - Using fall back playlist")
+				fmt.Println("NEXT SONG: " + randomPlaylistItem.Track.Track.Name)
+
+				playerOpt := spotify.PlayOptions{
+					DeviceID: &deviceID,
+					URIs:     []spotify.URI{randomPlaylistItem.Track.Track.URI},
+				}
 				err = client.PlayOpt(context.Background(), &playerOpt)
 			} else {
-				fmt.Println(track.Name)
+				fallbackPlaylist.Active = false
+				setCurrentTrackURI(track.URI)
+
+				fmt.Println("NEXT SONG: " + track.Name)
+
 				playerOpt := spotify.PlayOptions{
 					DeviceID: &deviceID,
 					URIs:     []spotify.URI{track.URI},
@@ -216,4 +256,8 @@ func setDeviceId(c *gin.Context) {
 
 func setCurrentPlayOptions(playerOpt spotify.PlayOptions) {
 	currentTrackPlayOptions = playerOpt
+}
+
+func setCurrentTrackURI(uri spotify.URI) {
+	currentTrackURI = uri
 }

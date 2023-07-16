@@ -16,4 +16,9 @@ Some installation instructions.
 
 # Suggestions
 
+## API
+- Add Queued Songs to Fallback Playlist
+- Admin Only Access/Function
+- JWT Tokens for Admin Access
+- Better Auth Flow
 

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -20,6 +21,7 @@ var (
 	auth             *spotifyauth.Authenticator
 	minimumVotes     int64
 	fallbackPlaylist FallbackPlaylist
+	currentTrackURI  spotify.URI
 
 	// ch    = make(chan *spotify.Client)
 	state = "spotifyJukeBox"
@@ -51,7 +53,8 @@ func main() {
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
 	fallbackPlaylist = FallbackPlaylist{
-		URI:    spotify.URI(os.Getenv("FALLBACK_PLAYLIST")),
+		URI:    spotify.URI(os.Getenv("FALLBACK_PLAYLIST_URI")),
+		ID:     spotify.ID(spotify.ID(strings.Replace(os.Getenv("FALLBACK_PLAYLIST_URI"), "spotify:playlist:", "", -1))),
 		Active: false,
 	}
 	// Set Minimum Votes

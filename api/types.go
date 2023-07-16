@@ -13,6 +13,7 @@ type LoginToken struct {
 
 type FallbackPlaylist struct {
 	URI    spotify.URI
+	ID     spotify.ID
 	Active bool
 }
 
