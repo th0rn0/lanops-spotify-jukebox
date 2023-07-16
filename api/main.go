@@ -77,6 +77,8 @@ func main() {
 	r.POST("/votes/:action", handleVote)
 
 	r.GET("/songs", getSongs)
+	// DEBUG - CHANGE ME
+	r.GET("/songs/current", getSongCurrent)
 	r.GET("/songs/:songUri", getSongByUri)
 	r.POST("/songs/:action", handleSong)
 

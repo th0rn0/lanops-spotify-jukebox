@@ -117,6 +117,27 @@ func getSongs(c *gin.Context) {
 
 // }
 
-// func getSongCurrent() {
+func getSongCurrent(c *gin.Context) {
+	var playerState *spotify.PlayerState
+	var err error
+	// var track Track
 
-// }
+	authHeader := c.Request.Header.Get("authorization")
+	authToken := strings.Split(authHeader, " ")[1]
+
+	authInput := oauth2.Token{
+		AccessToken: authToken,
+	}
+
+	ctx := c.Request.Context()
+
+	client := spotify.New(auth.Client(ctx, &authInput))
+
+	playerState, err = client.PlayerState(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, playerState.Item)
+}
