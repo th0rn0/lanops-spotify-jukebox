@@ -51,12 +51,11 @@ func main() {
 		),
 	)
 
-	// Load Database
+	// Load Database & Migrate the schema
 	db, err = gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
-	// Migrate the schema
 	db.AutoMigrate(&Track{})
 	db.AutoMigrate(&TrackImage{})
 
@@ -77,22 +76,18 @@ func main() {
 	// Start Router
 	r := gin.Default()
 
-	// DEBUG - do this here?
-	// go pollSpotify()
-
 	// Set Routes
-	r.GET("/login", serveLoginLink)
+	r.GET("/auth/login", serveLoginLink)
+	r.GET("/auth/callback", handleAuth)
 
 	r.POST("/player/:action", handlePlayer)
 
 	r.GET("/search/:searchTerm", handleSearch)
 
-	r.GET("/callback", handleAuth)
-
 	r.POST("/votes/:action", handleVote)
 
 	r.GET("/songs", getSongs)
-	// DEBUG - CHANGE ME
+
 	r.GET("/songs/current", getSongCurrent)
 	r.GET("/songs/:songUri", getSongByUri)
 	r.POST("/songs/:action", handleSong)
@@ -100,8 +95,6 @@ func main() {
 	r.GET("/device/all", getAllDeviceIds)
 	r.GET("/device", getCurrentDeviceId)
 	r.POST("/device", setDeviceId)
-	// go func() {
-	// 	r.Run(":8888")
-	// }()
+
 	r.Run(":8888")
 }
