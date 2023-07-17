@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -37,7 +38,13 @@ func main() {
 	// Load Spotify API
 	auth = spotifyauth.New(
 		spotifyauth.WithRedirectURL(os.Getenv("CALLBACK_URL")),
-		spotifyauth.WithScopes(spotifyauth.ScopeUserReadCurrentlyPlaying, spotifyauth.ScopeUserReadPlaybackState, spotifyauth.ScopeUserModifyPlaybackState),
+		spotifyauth.WithScopes(
+			spotifyauth.ScopeUserReadCurrentlyPlaying,
+			spotifyauth.ScopeUserReadPlaybackState,
+			spotifyauth.ScopeUserModifyPlaybackState,
+			spotifyauth.ScopePlaylistModifyPrivate,
+			spotifyauth.ScopePlaylistModifyPublic,
+		),
 	)
 
 	// Load Database
@@ -52,10 +59,12 @@ func main() {
 	// Set Device ID
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
+	addToPlaylist, _ := strconv.ParseBool(os.Getenv("FALLBACK_PLAYLIST_ADD_QUEUED"))
 	fallbackPlaylist = FallbackPlaylist{
-		URI:    spotify.URI(os.Getenv("FALLBACK_PLAYLIST_URI")),
-		ID:     spotify.ID(spotify.ID(strings.Replace(os.Getenv("FALLBACK_PLAYLIST_URI"), "spotify:playlist:", "", -1))),
-		Active: false,
+		URI:           spotify.URI(os.Getenv("FALLBACK_PLAYLIST_URI")),
+		ID:            spotify.ID(strings.Replace(os.Getenv("FALLBACK_PLAYLIST_URI"), "spotify:playlist:", "", -1)),
+		Active:        false,
+		AddToPlaylist: addToPlaylist,
 	}
 	// Set Minimum Votes
 	minimumVotes = 1
@@ -63,6 +72,7 @@ func main() {
 	// Start Router
 	r := gin.Default()
 
+	// DEBUG - do this here?
 	// go pollSpotify()
 
 	// Set Routes

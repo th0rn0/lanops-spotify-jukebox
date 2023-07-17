@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,11 +14,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var currentTrackPlayOptions spotify.PlayOptions
+// var currentTrackPlayOptions spotify.PlayOptions
+
+var pollingSpotify = false
 
 func handlePlayer(c *gin.Context) {
-	var handlePlayerInput HandlePlayerInput
-	var playerState *spotify.PlayerState
+	// var handlePlayerInput HandlePlayerInput
+	// var playerState *spotify.PlayerState
 	var err error
 	// var track Track
 
@@ -43,56 +44,35 @@ func handlePlayer(c *gin.Context) {
 
 	switch action {
 	case "start":
-		// DEBUG - if no items in queue play fallback
-
-		// playerState, _ = client.PlayerState(ctx)
-		// if playerState.Playing {
-		// 	c.JSON(http.StatusBadRequest, "Player Already Started")
-		// 	return
-		// }
-		// // DEBUG - Handle Error
-		// track, err = getNextSongByVotes()
-		// fmt.Println(track)
-		// if err != nil {
-		// 	c.JSON(http.StatusInternalServerError, err)
-		// 	return
-		// }
-
-		// //  DEBUG - Move these into pollSpotify
-		// setCurrentTrackURI(track.URI)
-		// setCurrentPlayOptions(spotify.PlayOptions{
-		// 	DeviceID: &deviceID,
-		// 	URIs:     []spotify.URI{track.URI},
-		// })
-		// err = client.PlayOpt(ctx, &currentTrackPlayOptions)
-
 		go pollSpotify(authInput)
-
 	case "play":
-		err = client.PlayOpt(ctx, &playerOpt)
+		if pollingSpotify {
+			err = client.PlayOpt(ctx, &playerOpt)
+		} else {
+			go pollSpotify(authInput)
+		}
 	case "pause":
 		err = client.PauseOpt(ctx, &playerOpt)
-	case "next":
+	case "skip":
+		track, _ := getNextSong(client, currentTrackURI)
+		playerOpt.URIs = []spotify.URI{track.URI}
 		err = client.NextOpt(ctx, &playerOpt)
-	case "previous":
-		err = client.PreviousOpt(ctx, &playerOpt)
-	case "shuffle":
-		playerState.ShuffleState = !playerState.ShuffleState
-		err = client.ShuffleOpt(ctx, playerState.ShuffleState, &playerOpt)
-	case "song":
-		if err := c.ShouldBindJSON(&handlePlayerInput); err != nil {
-			c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
-			return
+		// Debug - do proper error handling
+		if err != nil {
+			log.Print(err)
+			c.JSON(http.StatusInternalServerError, err)
 		}
-		if handlePlayerInput.URI == "" {
-			c.JSON(http.StatusInternalServerError, "URI is required.")
-			return
+		if !fallbackPlaylist.Active {
+			if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
+				c.JSON(http.StatusNotFound, "Track Not Found")
+				return
+			}
+			if err := db.Unscoped().Delete(&track).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, err)
+				return
+			}
 		}
-		playerOpt = spotify.PlayOptions{
-			DeviceID: &deviceID,
-			URIs:     []spotify.URI{handlePlayerInput.URI},
-		}
-		err = client.PlayOpt(ctx, &playerOpt)
+
 	}
 	// Debug - do proper error handling
 	if err != nil {
@@ -122,50 +102,56 @@ func getAllDeviceIds(c *gin.Context) {
 }
 
 func pollSpotify(authInput oauth2.Token) {
-	fmt.Println("STARTING JUKEBOX WITH DEVICE: " + deviceID)
 
 	var track Track
+
+	pollingSpotify = true
 
 	client := spotify.New(auth.Client(context.Background(), &authInput))
 
 	// DEBUG - Currently just restarts playback based on next item (will skip current song)
-	// DEBUG - move this into get next song by votes - change name to getnextsonginqueue
-	randomPlaylistItem := getRandomFallbackPlaylistItem(client)
-	err := client.PlayOpt(context.Background(), &spotify.PlayOptions{DeviceID: &deviceID, URIs: []spotify.URI{randomPlaylistItem.Track.Track.URI}})
+	//maybe dont do a stop, check if playing, set fallback and current track URI and run the loop
+	nextSong, _ := getNextSong(client)
+	err := client.PlayOpt(context.Background(), &spotify.PlayOptions{DeviceID: &deviceID, URIs: []spotify.URI{nextSong.URI}})
 	if err != nil {
 		// DEBUG - error handling
 		fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
 		fmt.Println(err)
 	}
-	fallbackPlaylist.Active = true
 
-	// playerOpt := spotify.PlayOptions{
-	// 	DeviceID: &deviceID,
-	// }
+	fallbackPlaylist.Active = nextSong.FromFallBackPlaylist
+	currentTrackURI = nextSong.URI
 
-	// var playerState *spotify.PlayerState
-
-	r := rand.New(rand.NewSource(99))
+	// r := rand.New(rand.NewSource(99))
 	c := time.Tick(10 * time.Second)
 
-	for _ = range c {
-		client := spotify.New(auth.Client(context.Background(), &authInput))
+	fmt.Println("STARTING JUKEBOX WITH DEVICE: " + deviceID)
+	fmt.Println("STARTING SONG: " + nextSong.Name + " - " + nextSong.Artist)
 
-		//Download the current contents of the URL and do something with it
-		fmt.Printf("Grab at %s\n", time.Now())
+	// Start the main Loop
+	for _ = range c {
 		playerState, err := client.PlayerState(context.Background())
 		if err != nil {
 			fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
 			fmt.Println(err)
 		}
-		fmt.Println("CURRENT SONG PROGRESS: " + strconv.Itoa(playerState.Progress))
-		fmt.Println("FALLBACK PLAYLIST STATUS: " + strconv.FormatBool(fallbackPlaylist.Active))
+		fmt.Println("CURRENT SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
+		fmt.Println("CURRENT PROGRESS: " + strconv.Itoa(playerState.Progress))
+		fmt.Println("FALLBACK STATUS: " + strconv.FormatBool(fallbackPlaylist.Active))
 
 		if playerState.Progress == 0 {
 			fmt.Println("LOADING NEXT SONG")
 			// Remove the track
 			// DEBUG - if fallback dont run
 			if !fallbackPlaylist.Active {
+				if fallbackPlaylist.AddToPlaylist {
+					fmt.Println("ADDING TRACK TO FALLBACK PLAYLIST: " + currentTrackURI)
+					_, err := client.AddTracksToPlaylist(context.Background(), fallbackPlaylist.ID, spotify.ID(strings.Replace(string(currentTrackURI), "spotify:track:", "", -1)))
+					if err != nil {
+						fmt.Println("SOMETHING WENT WRONG GETTING NEXT SONG")
+						fmt.Println(err)
+					}
+				}
 				fmt.Println("REMOVING TRACK FROM QUEUE: " + currentTrackURI)
 				if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
 					fmt.Println(err)
@@ -175,71 +161,48 @@ func pollSpotify(authInput oauth2.Token) {
 				}
 			}
 			// Get the next track
-			track, err = getNextSongByVotes()
-			// DEBUG - assume no more tracks - play backup playlist
-			// Send one random track from backup playlist. This is to check for new songs in queue
+			track, err = getNextSong(client)
 			if err != nil {
-				fallbackPlaylist.Active = true
-
-				randomPlaylistItem := getRandomFallbackPlaylistItem(client)
-
-				setCurrentTrackURI(randomPlaylistItem.Track.Track.URI)
-
-				fmt.Println("No More Tracks - Using fall back playlist")
-				fmt.Println("NEXT SONG: " + randomPlaylistItem.Track.Track.Name)
-
-				playerOpt := spotify.PlayOptions{
-					DeviceID: &deviceID,
-					URIs:     []spotify.URI{randomPlaylistItem.Track.Track.URI},
-				}
-				err = client.PlayOpt(context.Background(), &playerOpt)
-			} else {
-				fallbackPlaylist.Active = false
-				setCurrentTrackURI(track.URI)
-
-				fmt.Println("NEXT SONG: " + track.Name)
-
-				playerOpt := spotify.PlayOptions{
-					DeviceID: &deviceID,
-					URIs:     []spotify.URI{track.URI},
-				}
-				err = client.PlayOpt(context.Background(), &playerOpt)
+				fmt.Println("SOMETHING WENT WRONG GETTING NEXT SONG")
+				fmt.Println(err)
 			}
+			currentTrackURI = track.URI
+			fallbackPlaylist.Active = track.FromFallBackPlaylist
+
+			if fallbackPlaylist.Active {
+				fmt.Println("No More Tracks - Using fall back playlist")
+			}
+
+			fmt.Println("NEXT SONG: " + track.Name + " - " + track.Artist)
+
+			playerOpt := spotify.PlayOptions{
+				DeviceID: &deviceID,
+				URIs:     []spotify.URI{track.URI},
+			}
+			err = client.PlayOpt(context.Background(), &playerOpt)
+
 			if err != nil {
 				fmt.Println(err)
 			}
 		}
 
-		// add a bit of jitter
-		jitter := time.Duration(r.Int31n(5000)) * time.Millisecond
-		time.Sleep(jitter)
-
 	}
 }
 
-// DEBUG - to be implemented
 func getCurrentDeviceId(c *gin.Context) {
 	c.JSON(http.StatusAccepted, deviceID)
 }
 
 func setDeviceId(c *gin.Context) {
-
-}
-
-func setCurrentPlayOptions(playerOpt spotify.PlayOptions) {
-	currentTrackPlayOptions = playerOpt
-}
-
-func setCurrentTrackURI(uri spotify.URI) {
-	currentTrackURI = uri
-}
-
-func getRandomFallbackPlaylistItem(client *spotify.Client) spotify.PlaylistItem {
-	// DEBUG - Set Random Offset - currently will only pull first 100 songs. Could set Limit higher?
-	// Get Random number for fallback playlist track
-	// We add a single track so that we can still check playerState.Progress == 0
-	fallBackPlaylist, _ := client.GetPlaylistItems(context.Background(), fallbackPlaylist.ID)
-
-	rand.Seed(time.Now().UnixNano())
-	return fallBackPlaylist.Items[(rand.Intn(len(fallBackPlaylist.Items)-1) + 1)]
+	var setDeviceIdInput SetDeviceIdInput
+	if err := c.ShouldBindJSON(&setDeviceIdInput); err != nil {
+		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
+		return
+	}
+	if setDeviceIdInput.DeviceId == "" {
+		c.JSON(http.StatusInternalServerError, "Device ID is required.")
+		return
+	}
+	deviceID = setDeviceIdInput.DeviceId
+	c.JSON(http.StatusAccepted, deviceID)
 }

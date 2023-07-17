@@ -15,9 +15,10 @@ type LoginToken struct {
 }
 
 type FallbackPlaylist struct {
-	URI    spotify.URI
-	ID     spotify.ID
-	Active bool
+	URI           spotify.URI
+	ID            spotify.ID
+	Active        bool
+	AddToPlaylist bool
 }
 
 // Outputs
@@ -73,36 +74,39 @@ type GetSongByUriInput struct {
 	URI spotify.URI `json:"uri"`
 }
 
+type SetDeviceIdInput struct {
+	DeviceId spotify.ID `json:"device_id"`
+}
+
 // Models
 type Track struct {
-	URI    spotify.URI  `gorm:"primaryKey" json:"uri"`
-	Name   string       `json:"name"`
-	Artist string       `json:"artist"`
-	Votes  int64        `json:"votes"`
-	Images []TrackImage `gorm:"foreignKey:URI;references:URI" json:"images"`
+	URI                  spotify.URI  `gorm:"primaryKey" json:"uri"`
+	Name                 string       `json:"name"`
+	Artist               string       `json:"artist"`
+	Votes                int64        `json:"votes"`
+	FromFallBackPlaylist bool         `gorm:"-" default:"false"`
+	Images               []TrackImage `gorm:"foreignKey:TrackURI" json:"images"`
 }
 
 // Updating data in same transaction
 func (t *Track) BeforeDelete(tx *gorm.DB) (err error) {
 	var trackImages []TrackImage
-	fmt.Println("attempted delete")
-	if err := tx.Where("uri = ?", t.URI).Find(&trackImages).Error; err != nil {
+	if err := tx.Where("track_uri = ?", t.URI).Find(&trackImages).Error; err != nil {
 		// DEBUG - handle error
 		fmt.Println(err)
 	}
 	for _, image := range trackImages {
-		fmt.Println(image.ID)
 		tx.Model(&TrackImage{}).Unscoped().Delete(&image)
 	}
 	return
 }
 
 type TrackImage struct {
-	ID     uint   `gorm:"primarykey"`
-	Height int    `json:"height"`
-	Width  int    `json:"width"`
-	URL    string `json:"url"`
-	URI    spotify.URI
+	ID       uint   `gorm:"primarykey"`
+	Height   int    `json:"height"`
+	Width    int    `json:"width"`
+	URL      string `json:"url"`
+	TrackURI spotify.URI
 }
 
 // type Device struct {

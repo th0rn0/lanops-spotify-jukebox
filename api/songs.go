@@ -48,10 +48,10 @@ func handleSong(c *gin.Context) {
 		trackImages := []TrackImage{}
 		for _, image := range track.Album.Images {
 			thisImage := TrackImage{
-				URL:    image.URL,
-				Height: image.Height,
-				Width:  image.Width,
-				URI:    track.URI,
+				URL:      image.URL,
+				Height:   image.Height,
+				Width:    image.Width,
+				TrackURI: track.URI,
 			}
 			trackImages = append(trackImages, thisImage)
 		}
