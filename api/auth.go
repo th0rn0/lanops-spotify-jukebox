@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/zmb3/spotify/v2"
 )
 
 func serveLoginLink(c *gin.Context) {
@@ -22,6 +23,7 @@ func handleAuth(c *gin.Context) {
 		log.Fatalf("State mismatch: %s != %s\n", st, state)
 		c.JSON(http.StatusNotFound, err)
 	}
+	client = spotify.New(auth.Client(c.Request.Context(), tok))
 	// Return Auth to client
 	c.JSON(http.StatusOK, LoginToken{
 		AccessToken:  tok.AccessToken,
@@ -29,4 +31,6 @@ func handleAuth(c *gin.Context) {
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry.String(),
 	})
+	// fmt.Println("Login Completed!")
+	// ch <- client
 }

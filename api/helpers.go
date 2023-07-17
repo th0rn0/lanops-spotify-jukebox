@@ -8,7 +8,7 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-func getNextSong(client *spotify.Client, excludeUri ...spotify.URI) (Track, error) {
+func getNextSong(excludeUri ...spotify.URI) (Track, error) {
 	var nextTrack Track
 	var err error
 
@@ -20,7 +20,7 @@ func getNextSong(client *spotify.Client, excludeUri ...spotify.URI) (Track, erro
 	// DEBUG - assume no record - get from fallback playlist
 	// DEBUG - fix this
 	if err != nil {
-		nextSongFromPlayList := getRandomFallbackPlaylistItem(client)
+		nextSongFromPlayList := getRandomFallbackPlaylistItem()
 		// if err != nil {
 		// 	return nextTrack, err
 		// }
@@ -56,7 +56,7 @@ func getNextSongByVotes(excludeUri ...spotify.URI) (Track, error) {
 	return track, nil
 }
 
-func getRandomFallbackPlaylistItem(client *spotify.Client) spotify.PlaylistItem {
+func getRandomFallbackPlaylistItem() spotify.PlaylistItem {
 	// DEBUG - Set Random Offset - currently will only pull first 100 songs. Could set Limit higher?
 	// Get Random number for fallback playlist track
 	// We add a single track so that we can still check playerState.Progress == 0

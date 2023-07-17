@@ -14,23 +14,19 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// var currentTrackPlayOptions spotify.PlayOptions
-
-var pollingSpotify = false
-
 func handlePlayer(c *gin.Context) {
 	// var handlePlayerInput HandlePlayerInput
 	// var playerState *spotify.PlayerState
 	var err error
 	// var track Track
 
-	authHeader := c.Request.Header.Get("authorization")
-	authToken := strings.Split(authHeader, " ")[1]
+	// authHeader := c.Request.Header.Get("authorization")
+	// authToken := strings.Split(authHeader, " ")[1]
 
-	authInput := oauth2.Token{
-		AccessToken: authToken,
-	}
-	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
+	// authInput := oauth2.Token{
+	// 	AccessToken: authToken,
+	// }
+	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
@@ -44,17 +40,19 @@ func handlePlayer(c *gin.Context) {
 
 	switch action {
 	case "start":
-		go pollSpotify(authInput)
+		// go pollSpotify(authInput)
+		go pollSpotify()
 	case "play":
 		if pollingSpotify {
 			err = client.PlayOpt(ctx, &playerOpt)
 		} else {
-			go pollSpotify(authInput)
+			// go pollSpotify(authInput)
+			go pollSpotify()
 		}
 	case "pause":
 		err = client.PauseOpt(ctx, &playerOpt)
 	case "skip":
-		track, _ := getNextSong(client, currentTrackURI)
+		track, _ := getNextSong(currentTrackURI)
 		playerOpt.URIs = []spotify.URI{track.URI}
 		err = client.NextOpt(ctx, &playerOpt)
 		// Debug - do proper error handling
@@ -101,32 +99,38 @@ func getAllDeviceIds(c *gin.Context) {
 	c.JSON(http.StatusAccepted, devices)
 }
 
-func pollSpotify(authInput oauth2.Token) {
-
+// func pollSpotify(authInput oauth2.Token) {
+func pollSpotify() {
 	var track Track
 
 	pollingSpotify = true
 
-	client := spotify.New(auth.Client(context.Background(), &authInput))
+	fmt.Println("STARTING JUKEBOX WITH DEVICE: " + deviceID)
 
-	// DEBUG - Currently just restarts playback based on next item (will skip current song)
-	//maybe dont do a stop, check if playing, set fallback and current track URI and run the loop
-	nextSong, _ := getNextSong(client)
-	err := client.PlayOpt(context.Background(), &spotify.PlayOptions{DeviceID: &deviceID, URIs: []spotify.URI{nextSong.URI}})
+	playerState, err := client.PlayerState(context.Background())
 	if err != nil {
 		// DEBUG - error handling
-		fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
+		fmt.Println("SOMETHING WENT WRONG GETTING PLAYER")
 		fmt.Println(err)
 	}
+	if playerState.Playing {
+		fallbackPlaylist.Active = true
+		currentTrackURI = playerState.Item.URI
+		fmt.Println("CONTINUING SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
+	} else {
+		track, _ := getNextSong()
+		err := client.PlayOpt(context.Background(), &spotify.PlayOptions{DeviceID: &deviceID, URIs: []spotify.URI{track.URI}})
+		if err != nil {
+			// DEBUG - error handling
+			fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
+			fmt.Println(err)
+		}
+		fallbackPlaylist.Active = track.FromFallBackPlaylist
+		currentTrackURI = track.URI
+		fmt.Println("STARTING SONG: " + track.Name + " - " + track.Artist)
+	}
 
-	fallbackPlaylist.Active = nextSong.FromFallBackPlaylist
-	currentTrackURI = nextSong.URI
-
-	// r := rand.New(rand.NewSource(99))
 	c := time.Tick(10 * time.Second)
-
-	fmt.Println("STARTING JUKEBOX WITH DEVICE: " + deviceID)
-	fmt.Println("STARTING SONG: " + nextSong.Name + " - " + nextSong.Artist)
 
 	// Start the main Loop
 	for _ = range c {
@@ -161,7 +165,7 @@ func pollSpotify(authInput oauth2.Token) {
 				}
 			}
 			// Get the next track
-			track, err = getNextSong(client)
+			track, err = getNextSong()
 			if err != nil {
 				fmt.Println("SOMETHING WENT WRONG GETTING NEXT SONG")
 				fmt.Println(err)

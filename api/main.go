@@ -22,10 +22,14 @@ var (
 	auth             *spotifyauth.Authenticator
 	minimumVotes     int64
 	fallbackPlaylist FallbackPlaylist
-	currentTrackURI  spotify.URI
+	// DEBUG - make this currentTrack and pull in all info
+	currentTrackURI spotify.URI
+	client          *spotify.Client
+)
 
-	// ch    = make(chan *spotify.Client)
-	state = "spotifyJukeBox"
+var (
+	state          = "spotifyJukeBox"
+	pollingSpotify = false
 )
 
 func main() {
@@ -66,8 +70,9 @@ func main() {
 		Active:        false,
 		AddToPlaylist: addToPlaylist,
 	}
+
 	// Set Minimum Votes
-	minimumVotes = 1
+	minimumVotes, _ = strconv.ParseInt(os.Getenv("MINIMUM_VOTES"), 10, 64)
 
 	// Start Router
 	r := gin.Default()
@@ -95,7 +100,8 @@ func main() {
 	r.GET("/device/all", getAllDeviceIds)
 	r.GET("/device", getCurrentDeviceId)
 	r.POST("/device", setDeviceId)
-
+	// go func() {
+	// 	r.Run(":8888")
+	// }()
 	r.Run(":8888")
-
 }

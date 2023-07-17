@@ -7,17 +7,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mattn/go-sqlite3"
 	"github.com/zmb3/spotify/v2"
-	"golang.org/x/oauth2"
 )
 
 func handleSong(c *gin.Context) {
-	authHeader := c.Request.Header.Get("authorization")
-	authToken := strings.Split(authHeader, " ")[1]
+	// authHeader := c.Request.Header.Get("authorization")
+	// authToken := strings.Split(authHeader, " ")[1]
 
-	authInput := oauth2.Token{
-		AccessToken: authToken,
-	}
-	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
+	// authInput := oauth2.Token{
+	// 	AccessToken: authToken,
+	// }
+	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
 	var handleSongInput HandleSongInput
 	var playerState *spotify.PlayerState
@@ -122,18 +121,16 @@ func getSongCurrent(c *gin.Context) {
 	var err error
 	// var track Track
 
-	authHeader := c.Request.Header.Get("authorization")
-	authToken := strings.Split(authHeader, " ")[1]
+	// authHeader := c.Request.Header.Get("authorization")
+	// authToken := strings.Split(authHeader, " ")[1]
 
-	authInput := oauth2.Token{
-		AccessToken: authToken,
-	}
+	// authInput := oauth2.Token{
+	// 	AccessToken: authToken,
+	// }
 
-	ctx := c.Request.Context()
+	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
-	client := spotify.New(auth.Client(ctx, &authInput))
-
-	playerState, err = client.PlayerState(ctx)
+	playerState, err = client.PlayerState(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return

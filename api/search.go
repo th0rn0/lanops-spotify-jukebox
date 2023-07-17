@@ -4,21 +4,19 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zmb3/spotify/v2"
-	"golang.org/x/oauth2"
 )
 
 func handleSearch(c *gin.Context) {
-	authHeader := c.Request.Header.Get("authorization")
-	authToken := strings.Split(authHeader, " ")[1]
+	// authHeader := c.Request.Header.Get("authorization")
+	// authToken := strings.Split(authHeader, " ")[1]
 
-	authInput := oauth2.Token{
-		AccessToken: authToken,
-	}
-	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
+	// authInput := oauth2.Token{
+	// 	AccessToken: authToken,
+	// }
+	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
 	ctx := c.Request.Context()
 	searchTerm := c.Param("searchTerm")
