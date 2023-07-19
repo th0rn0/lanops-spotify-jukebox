@@ -36,14 +36,6 @@ var (
 	pollingSpotify = false
 )
 
-func keyFunc(c *gin.Context) string {
-	return c.ClientIP()
-}
-
-func errorHandler(c *gin.Context, info ratelimit.Info) {
-	c.String(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
-}
-
 func main() {
 	// Load Env
 	err := godotenv.Load()
@@ -79,8 +71,12 @@ func main() {
 	})
 
 	mw := ratelimit.RateLimiter(store, &ratelimit.Options{
-		ErrorHandler: errorHandler,
-		KeyFunc:      keyFunc,
+		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
+			c.JSON(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
+		},
+		KeyFunc: func(c *gin.Context) string {
+			return c.ClientIP() + c.Request.UserAgent()
+		},
 	})
 
 	// Set Device ID

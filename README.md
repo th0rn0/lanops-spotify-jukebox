@@ -45,4 +45,5 @@ Some installation instructions.
 - Admin Only Access/Function
 - JWT Tokens for Admin Access
 - Get current song brings back streamlined request with progress (for frontend display)
+- Add Postman JSON
 
