@@ -115,3 +115,9 @@ type TrackImage struct {
 // 	Type   string `json:"type"`
 // 	Active bool   `json:"is_active"`
 // }
+
+// type User struct {
+// 	gorm.Model
+// 	DeviceID string
+// 	IP       string
+// }

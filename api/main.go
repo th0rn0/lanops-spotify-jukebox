@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/zmb3/spotify/v2"
 
+	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -25,12 +27,22 @@ var (
 	// DEBUG - make this currentTrack and pull in all info
 	currentTrackURI spotify.URI
 	client          *spotify.Client
+	// oauthToken      *oauth2.Token
+	oauthToken LoginToken
 )
 
 var (
 	state          = "spotifyJukeBox"
 	pollingSpotify = false
 )
+
+func keyFunc(c *gin.Context) string {
+	return c.ClientIP()
+}
+
+func errorHandler(c *gin.Context, info ratelimit.Info) {
+	c.String(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
+}
 
 func main() {
 	// Load Env
@@ -59,6 +71,18 @@ func main() {
 	db.AutoMigrate(&Track{})
 	db.AutoMigrate(&TrackImage{})
 
+	// Set Rate Limiting
+	rateLimit, _ := strconv.ParseUint(os.Getenv("MAXIMUM_VOTES_PER_HOUR"), 10, 32)
+	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
+		Rate:  time.Hour,
+		Limit: uint(rateLimit),
+	})
+
+	mw := ratelimit.RateLimiter(store, &ratelimit.Options{
+		ErrorHandler: errorHandler,
+		KeyFunc:      keyFunc,
+	})
+
 	// Set Device ID
 	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
 
@@ -71,7 +95,7 @@ func main() {
 	}
 
 	// Set Minimum Votes
-	minimumVotes, _ = strconv.ParseInt(os.Getenv("MINIMUM_VOTES"), 10, 64)
+	minimumVotes, _ = strconv.ParseInt(os.Getenv("MINIMUM_VOTES_TO_REMOVE"), 10, 64)
 
 	// Start Router
 	r := gin.Default()
@@ -84,7 +108,7 @@ func main() {
 
 	r.GET("/search/:searchTerm", handleSearch)
 
-	r.POST("/votes/:action", handleVote)
+	r.POST("/votes/:action", mw, handleVote)
 
 	r.GET("/songs", getSongs)
 

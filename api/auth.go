@@ -24,13 +24,15 @@ func handleAuth(c *gin.Context) {
 		c.JSON(http.StatusNotFound, err)
 	}
 	client = spotify.New(auth.Client(c.Request.Context(), tok))
-	// Return Auth to client
-	c.JSON(http.StatusOK, LoginToken{
-		AccessToken:  tok.AccessToken,
-		TokenType:    tok.TokenType,
-		RefreshToken: tok.RefreshToken,
-		Expiry:       tok.Expiry.String(),
-	})
-	// fmt.Println("Login Completed!")
+
+	// Set OAuth Token
+	oauthToken.AccessToken = tok.AccessToken
+	oauthToken.TokenType = tok.TokenType
+	oauthToken.RefreshToken = tok.RefreshToken
+	oauthToken.Expiry = tok.Expiry.String()
+
 	// ch <- client
+
+	// Return Auth to client
+	c.JSON(http.StatusOK, oauthToken)
 }

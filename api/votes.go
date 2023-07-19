@@ -2,25 +2,15 @@ package main
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zmb3/spotify/v2"
-	"golang.org/x/oauth2"
 )
 
 func handleVote(c *gin.Context) {
 	var handleVoteInput HandleSongInput
 	var playerState *spotify.PlayerState
 	var track Track
-
-	authHeader := c.Request.Header.Get("authorization")
-	authToken := strings.Split(authHeader, " ")[1]
-
-	authInput := oauth2.Token{
-		AccessToken: authToken,
-	}
-	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
 	ctx := c.Request.Context()
 	action := c.Param("action")

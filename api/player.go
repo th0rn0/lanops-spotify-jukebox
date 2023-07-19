@@ -15,18 +15,7 @@ import (
 )
 
 func handlePlayer(c *gin.Context) {
-	// var handlePlayerInput HandlePlayerInput
-	// var playerState *spotify.PlayerState
 	var err error
-	// var track Track
-
-	// authHeader := c.Request.Header.Get("authorization")
-	// authToken := strings.Split(authHeader, " ")[1]
-
-	// authInput := oauth2.Token{
-	// 	AccessToken: authToken,
-	// }
-	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
@@ -40,13 +29,11 @@ func handlePlayer(c *gin.Context) {
 
 	switch action {
 	case "start":
-		// go pollSpotify(authInput)
 		go pollSpotify()
 	case "play":
 		if pollingSpotify {
 			err = client.PlayOpt(ctx, &playerOpt)
 		} else {
-			// go pollSpotify(authInput)
 			go pollSpotify()
 		}
 	case "pause":
@@ -81,25 +68,6 @@ func handlePlayer(c *gin.Context) {
 	c.JSON(http.StatusAccepted, "Ok")
 }
 
-func getAllDeviceIds(c *gin.Context) {
-	authHeader := c.Request.Header.Get("authorization")
-	authToken := strings.Split(authHeader, " ")[1]
-
-	authInput := oauth2.Token{
-		AccessToken: authToken,
-	}
-	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
-
-	ctx := c.Request.Context()
-	devices, err := client.PlayerDevices(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(http.StatusAccepted, devices)
-}
-
-// func pollSpotify(authInput oauth2.Token) {
 func pollSpotify() {
 	var track Track
 
@@ -136,8 +104,24 @@ func pollSpotify() {
 	for _ = range c {
 		playerState, err := client.PlayerState(context.Background())
 		if err != nil {
-			fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
-			fmt.Println(err)
+			// Attempt to reAuth
+			oldToken := &oauth2.Token{
+				AccessToken:  oauthToken.AccessToken,
+				RefreshToken: oauthToken.RefreshToken,
+			}
+			client = spotify.New(auth.Client(context.Background(), oldToken))
+			token, err := client.Token()
+			if err != nil {
+				fmt.Println("SOMETHING WENT WRONG REFRESHING TOKEN")
+				fmt.Println(err.Error())
+			}
+			oauthToken.AccessToken = token.AccessToken
+			oauthToken.TokenType = token.TokenType
+			oauthToken.RefreshToken = token.RefreshToken
+			oauthToken.Expiry = token.Expiry.String()
+
+			// fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
+			// fmt.Println(err.Error())
 		}
 		fmt.Println("CURRENT SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
 		fmt.Println("CURRENT PROGRESS: " + strconv.Itoa(playerState.Progress))
@@ -146,9 +130,9 @@ func pollSpotify() {
 		if playerState.Progress == 0 {
 			fmt.Println("LOADING NEXT SONG")
 			// Remove the track
-			// DEBUG - if fallback dont run
 			if !fallbackPlaylist.Active {
 				if fallbackPlaylist.AddToPlaylist {
+					// DEBUG - Check if track is already in playlist
 					fmt.Println("ADDING TRACK TO FALLBACK PLAYLIST: " + currentTrackURI)
 					_, err := client.AddTracksToPlaylist(context.Background(), fallbackPlaylist.ID, spotify.ID(strings.Replace(string(currentTrackURI), "spotify:track:", "", -1)))
 					if err != nil {
@@ -191,6 +175,26 @@ func pollSpotify() {
 		}
 
 	}
+}
+
+// Device Helpers
+// DEBUG - get device instead of just ID
+func getAllDeviceIds(c *gin.Context) {
+	authHeader := c.Request.Header.Get("authorization")
+	authToken := strings.Split(authHeader, " ")[1]
+
+	authInput := oauth2.Token{
+		AccessToken: authToken,
+	}
+	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
+
+	ctx := c.Request.Context()
+	devices, err := client.PlayerDevices(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, devices)
 }
 
 func getCurrentDeviceId(c *gin.Context) {
