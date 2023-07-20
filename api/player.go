@@ -23,25 +23,33 @@ func handlePlayer(c *gin.Context) {
 	fmt.Println("Got request for:", action)
 
 	playerOpt := spotify.PlayOptions{
-		DeviceID: &deviceID,
+		DeviceID: &currentDevice.ID,
 	}
 
+	// Play currentDevice set volume
 	switch action {
 	case "start":
 		go pollSpotify()
 	case "play":
 		if pollingSpotify {
 			err = client.PlayOpt(ctx, &playerOpt)
+			if err != nil {
+				log.Print(err)
+				c.JSON(http.StatusInternalServerError, err)
+			}
 		} else {
 			go pollSpotify()
 		}
 	case "pause":
 		err = client.PauseOpt(ctx, &playerOpt)
+		if err != nil {
+			log.Print(err)
+			c.JSON(http.StatusInternalServerError, err)
+		}
 	case "skip":
 		track, _ := getNextSong(currentTrackURI)
 		playerOpt.URIs = []spotify.URI{track.URI}
 		err = client.NextOpt(ctx, &playerOpt)
-		// Debug - do proper error handling
 		if err != nil {
 			log.Print(err)
 			c.JSON(http.StatusInternalServerError, err)
@@ -58,13 +66,8 @@ func handlePlayer(c *gin.Context) {
 		}
 
 	}
-	// Debug - do proper error handling
-	if err != nil {
-		log.Print(err)
-		c.JSON(http.StatusInternalServerError, err)
-	}
 
-	c.JSON(http.StatusAccepted, "Ok")
+	c.JSON(http.StatusAccepted, "Ok"+action)
 }
 
 func pollSpotify() {
@@ -72,11 +75,10 @@ func pollSpotify() {
 
 	pollingSpotify = true
 
-	fmt.Println("STARTING JUKEBOX WITH DEVICE: " + deviceID)
+	fmt.Println("STARTING JUKEBOX WITH DEVICE: " + currentDevice.ID)
 
 	playerState, err := client.PlayerState(context.Background())
 	if err != nil {
-		// DEBUG - error handling
 		fmt.Println("SOMETHING WENT WRONG GETTING PLAYER")
 		fmt.Println(err)
 	}
@@ -86,9 +88,8 @@ func pollSpotify() {
 		fmt.Println("CONTINUING SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
 	} else {
 		track, _ := getNextSong()
-		err := client.PlayOpt(context.Background(), &spotify.PlayOptions{DeviceID: &deviceID, URIs: []spotify.URI{track.URI}})
+		err := client.PlayOpt(context.Background(), &spotify.PlayOptions{DeviceID: &currentDevice.ID, URIs: []spotify.URI{track.URI}})
 		if err != nil {
-			// DEBUG - error handling
 			fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
 			fmt.Println(err)
 		}
@@ -188,7 +189,7 @@ func pollSpotify() {
 			fmt.Println("NEXT SONG: " + track.Name + " - " + track.Artist)
 
 			playerOpt := spotify.PlayOptions{
-				DeviceID: &deviceID,
+				DeviceID: &currentDevice.ID,
 				URIs:     []spotify.URI{track.URI},
 			}
 			err = client.PlayOpt(context.Background(), &playerOpt)
@@ -197,23 +198,11 @@ func pollSpotify() {
 				fmt.Println(err)
 			}
 		}
-
 	}
 }
 
-// Device Helpers
-// DEBUG - get device instead of just ID
 func getAllDeviceIds(c *gin.Context) {
-	authHeader := c.Request.Header.Get("authorization")
-	authToken := strings.Split(authHeader, " ")[1]
-
-	authInput := oauth2.Token{
-		AccessToken: authToken,
-	}
-	client := spotify.New(auth.Client(c.Request.Context(), &authInput))
-
-	ctx := c.Request.Context()
-	devices, err := client.PlayerDevices(ctx)
+	devices, err := client.PlayerDevices(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -222,19 +211,55 @@ func getAllDeviceIds(c *gin.Context) {
 }
 
 func getCurrentDeviceId(c *gin.Context) {
-	c.JSON(http.StatusAccepted, deviceID)
+	c.JSON(http.StatusAccepted, currentDevice)
 }
 
 func setDeviceId(c *gin.Context) {
 	var setDeviceIdInput SetDeviceIdInput
+	var device Device
+	var currentDevice Device
+
 	if err := c.ShouldBindJSON(&setDeviceIdInput); err != nil {
 		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
 		return
 	}
 	if setDeviceIdInput.DeviceId == "" {
-		c.JSON(http.StatusInternalServerError, "Device ID is required.")
+		c.JSON(http.StatusInternalServerError, "Device ID is required")
 		return
 	}
-	deviceID = setDeviceIdInput.DeviceId
-	c.JSON(http.StatusAccepted, deviceID)
+	devices, err := client.PlayerDevices(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	for _, d := range devices {
+		if d.ID == setDeviceIdInput.DeviceId {
+			device.Active = d.Active
+			device.DeviceID = d.ID.String()
+			device.Name = d.Name
+			device.Type = d.Type
+		}
+	}
+
+	if device.DeviceID == "" {
+		c.JSON(http.StatusNotFound, "Device Not Found")
+		return
+	}
+
+	// Delete current Device in DB
+	if currentDevice.DeviceID != "" {
+		if err := db.Unscoped().Delete(&currentDevice).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	// Add Device to DB
+	if err := db.Create(&device).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	currentDevice = device
+	c.JSON(http.StatusAccepted, device)
 }

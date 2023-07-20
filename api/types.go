@@ -108,12 +108,13 @@ type TrackImage struct {
 	TrackURI spotify.URI
 }
 
-// type Device struct {
-// 	ID     string `json:"id"`
-// 	Name   string `json:"name"`
-// 	Type   string `json:"type"`
-// 	Active bool   `json:"is_active"`
-// }
+type Device struct {
+	gorm.Model
+	DeviceID string `json:"device_id"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Active   bool   `json:"is_active"`
+}
 
 // type User struct {
 // 	gorm.Model

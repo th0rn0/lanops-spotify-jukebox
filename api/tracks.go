@@ -69,7 +69,7 @@ func handleTrack(c *gin.Context) {
 		if playerState.Playing && playerState.Item.URI == track.URI {
 			newTrack, _ := getNextSongByVotes()
 			playerOpt := spotify.PlayOptions{
-				DeviceID: &deviceID,
+				DeviceID: &currentDevice.ID,
 				URIs:     []spotify.URI{newTrack.URI},
 			}
 			err := client.PlayOpt(ctx, &playerOpt)

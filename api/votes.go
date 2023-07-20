@@ -8,8 +8,7 @@ import (
 )
 
 func handleVote(c *gin.Context) {
-	// DEBUG - change this
-	var handleVoteInput HandleTrackInput
+	var handleVoteInput HandleVoteInput
 	var playerState *spotify.PlayerState
 	var track Track
 
@@ -48,7 +47,7 @@ func handleVote(c *gin.Context) {
 			if playerState.Playing && playerState.Item.URI == track.URI {
 				newTrack, _ := getNextSongByVotes()
 				playerOpt := spotify.PlayOptions{
-					DeviceID: &deviceID,
+					DeviceID: &currentDevice.ID,
 					URIs:     []spotify.URI{newTrack.URI},
 				}
 				err := client.PlayOpt(ctx, &playerOpt)

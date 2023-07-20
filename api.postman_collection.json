@@ -1,0 +1,411 @@
+{
+	"info": {
+		"_postman_id": "8e9d10df-509a-497b-854f-356daa3d0710",
+		"name": "api",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "478495",
+		"_collection_link": "https://spotifyjukebox.postman.co/workspace/Team-Workspace~3f13c662-6654-4cb7-8423-ab97247e5d11/collection/478495-8e9d10df-509a-497b-854f-356daa3d0710?action=share&creator=478495&source=collection_link"
+	},
+	"item": [
+		{
+			"name": "player",
+			"item": [
+				{
+					"name": "start",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/player/start",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"player",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "play",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/player/play",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"player",
+								"play"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pause",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/player/pause",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"player",
+								"pause"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skip",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/player/skip",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"player",
+								"skip"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get all devices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/device/all",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"device",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get current device",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "set current device (NOT IMPLEMENTED)",
+					"request": {
+						"method": "POST",
+						"header": []
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "votes",
+			"item": [
+				{
+					"name": "add vote",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8888/votes/add",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"votes",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "remove vote",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8888/votes/remove",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"votes",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "tracks",
+			"item": [
+				{
+					"name": "get all",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}"
+						},
+						"url": {
+							"raw": "localhost:8888/tracks",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"tracks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get current",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}"
+						},
+						"url": {
+							"raw": "localhost:8888/tracks/current",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"tracks",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get by uri (should this pull from DB or spotify)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}"
+						},
+						"url": {
+							"raw": "localhost:8888/tracks/spotify:track:6rsoBvxrlxdmqJyGPPciyq",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"tracks",
+								"spotify:track:6rsoBvxrlxdmqJyGPPciyq"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8888/songs/add",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"songs",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "remove",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8888/songs/remove",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"songs",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "login",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8888/auth/login",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "search",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8888/search/slipknot",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"search",
+						"slipknot"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "accessKey",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

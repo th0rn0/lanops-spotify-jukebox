@@ -19,16 +19,14 @@ import (
 )
 
 var (
-	deviceID         spotify.ID
+	currentDevice    *spotify.PlayerDevice
+	fallbackPlaylist FallbackPlaylist
 	db               *gorm.DB
 	auth             *spotifyauth.Authenticator
 	minimumVotes     int64
-	fallbackPlaylist FallbackPlaylist
-	// DEBUG - make this currentTrack and pull in all info
-	currentTrackURI spotify.URI
-	client          *spotify.Client
-	// oauthToken      *oauth2.Token
-	oauthToken LoginToken
+	currentTrackURI  spotify.URI
+	client           *spotify.Client
+	oauthToken       LoginToken
 )
 
 var (
@@ -43,25 +41,14 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Load Spotify API
-	auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL(os.Getenv("CALLBACK_URL")),
-		spotifyauth.WithScopes(
-			spotifyauth.ScopeUserReadCurrentlyPlaying,
-			spotifyauth.ScopeUserReadPlaybackState,
-			spotifyauth.ScopeUserModifyPlaybackState,
-			spotifyauth.ScopePlaylistModifyPrivate,
-			spotifyauth.ScopePlaylistModifyPublic,
-		),
-	)
-
 	// Load Database & Migrate the schema
 	db, err = gorm.Open(sqlite.Open(os.Getenv("DB_PATH")), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		log.Fatal("failed to connect database")
 	}
 	db.AutoMigrate(&Track{})
 	db.AutoMigrate(&TrackImage{})
+	db.AutoMigrate(&Device{})
 
 	// Set Rate Limiting
 	rateLimit, _ := strconv.ParseUint(os.Getenv("MAXIMUM_VOTES_PER_HOUR"), 10, 32)
@@ -79,8 +66,31 @@ func main() {
 		},
 	})
 
+	// Load Spotify API
+	auth = spotifyauth.New(
+		spotifyauth.WithRedirectURL(os.Getenv("CALLBACK_URL")),
+		spotifyauth.WithScopes(
+			spotifyauth.ScopeUserReadCurrentlyPlaying,
+			spotifyauth.ScopeUserReadPlaybackState,
+			spotifyauth.ScopeUserModifyPlaybackState,
+			spotifyauth.ScopePlaylistModifyPrivate,
+			spotifyauth.ScopePlaylistModifyPublic,
+		),
+	)
+
 	// Set Device ID
-	deviceID = spotify.ID(os.Getenv("DEVICE_ID"))
+	dbDevice := Device{}
+	if err := db.First(&dbDevice).Error; err == nil {
+		currentDevice.Active = false
+		currentDevice.Name = dbDevice.Name
+		currentDevice.Type = dbDevice.Type
+		currentDevice.Active = dbDevice.Active
+	} else {
+		// Assume no Device is Set
+		log.Println("-------------")
+		log.Println("NO DEVICE SET")
+		log.Println("-------------")
+	}
 
 	addToPlaylist, _ := strconv.ParseBool(os.Getenv("FALLBACK_PLAYLIST_ADD_QUEUED"))
 	fallbackPlaylist = FallbackPlaylist{
@@ -92,6 +102,16 @@ func main() {
 
 	// Set Minimum Votes
 	minimumVotes, _ = strconv.ParseInt(os.Getenv("MINIMUM_VOTES_TO_REMOVE"), 10, 64)
+
+	// Set Logging to file
+	logToFile, _ := strconv.ParseBool(os.Getenv("APP_LOG_TO_FILE"))
+	if logToFile {
+		file, err := os.OpenFile(os.Getenv("APP_LOG_PATH"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.SetOutput(file)
+	}
 
 	// Start Router
 	r := gin.Default()
