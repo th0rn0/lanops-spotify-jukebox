@@ -42,7 +42,6 @@ Some installation instructions.
 # Suggestions
 
 ## API
-- Admin Only Access/Function
-- JWT Tokens for Admin Access
-- Get current song brings back streamlined request with progress (for frontend display)
+
+## UI
 

@@ -66,6 +66,11 @@ func main() {
 		},
 	})
 
+	// Basic Auth Middleware
+	gin.BasicAuth(gin.Accounts{
+		"foo": "bar",
+	})
+
 	// Load Spotify API
 	auth = spotifyauth.New(
 		spotifyauth.WithRedirectURL(os.Getenv("CALLBACK_URL")),
@@ -116,24 +121,42 @@ func main() {
 	// Start Router
 	r := gin.Default()
 
+	authorized := r.Group("", gin.BasicAuth(gin.Accounts{
+		"admin": os.Getenv("ADMIN_PASSWORD"),
+	}))
+
 	// Set Routes
-	r.GET("/auth/login", serveLoginLink)
-	r.GET("/auth/callback", handleAuth)
-
-	r.POST("/player/:action", handlePlayer)
-
 	r.GET("/search/:searchTerm", handleSearch)
 
 	r.POST("/votes/:action", rateLimitMiddleWare, handleVote)
 
-	r.GET("/tracks", getTracks)
-	r.GET("/tracks/current", getTrackCurrent)
-	r.GET("/tracks/:trackUri", getTrackByUri)
-	r.POST("/tracks/:action", handleTrack)
+	r.GET("/auth/callback", handleAuth)
+	authorized.GET("/auth/login", serveLoginLink)
 
-	r.GET("/device/all", getAllDeviceIds)
-	r.GET("/device", getCurrentDeviceId)
-	r.POST("/device", setDeviceId)
+	authorized.POST("/player/:action", handlePlayer)
+
+	authorized.GET("/tracks", getTracks)
+	authorized.GET("/tracks/current", getTrackCurrent)
+	authorized.GET("/tracks/:trackUri", getTrackByUri)
+	authorized.POST("/tracks/:action", handleTrack)
+
+	authorized.GET("/device/all", getAllDeviceIds)
+	authorized.GET("/device", getCurrentDeviceId)
+	authorized.POST("/device", setDeviceId)
 
 	r.Run(":8888")
 }
+
+// func basicAuth(c *gin.Context) {
+// 	// Get the Basic Authentication credentials
+// 	user, password, hasAuth := c.Request.BasicAuth()
+// 	if hasAuth && user == "testuser" && password == "testpass" {
+// 		log.WithFields(log.Fields{
+// 			"user": user,
+// 		}).Info("User authenticated")
+// 	} else {
+// 		c.Abort()
+// 		c.Writer.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
+// 		return
+// 	}
+// }
