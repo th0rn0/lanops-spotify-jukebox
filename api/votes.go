@@ -8,7 +8,8 @@ import (
 )
 
 func handleVote(c *gin.Context) {
-	var handleVoteInput HandleSongInput
+	// DEBUG - change this
+	var handleVoteInput HandleTrackInput
 	var playerState *spotify.PlayerState
 	var track Track
 
@@ -36,8 +37,8 @@ func handleVote(c *gin.Context) {
 			return
 		}
 	case "remove":
-		// DEBUG - if votes at 1 then minimum votes wont work
 		playerState, _ = client.PlayerState(ctx)
+		track.Votes = track.Votes - 1
 		if track.Votes <= minimumVotes {
 			if err := db.Unscoped().Delete(&Track{}, Track{URI: handleVoteInput.URI}).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, err)
@@ -57,7 +58,7 @@ func handleVote(c *gin.Context) {
 				}
 			}
 		} else {
-			if err := db.Model(&track).Update("votes", track.Votes-1).Error; err != nil {
+			if err := db.Model(&track).Update("votes", track.Votes).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, err)
 				return
 			}

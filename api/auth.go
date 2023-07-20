@@ -29,7 +29,7 @@ func handleAuth(c *gin.Context) {
 	oauthToken.AccessToken = tok.AccessToken
 	oauthToken.TokenType = tok.TokenType
 	oauthToken.RefreshToken = tok.RefreshToken
-	oauthToken.Expiry = tok.Expiry.String()
+	oauthToken.Expiry = tok.Expiry
 
 	// ch <- client
 

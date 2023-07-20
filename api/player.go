@@ -20,7 +20,6 @@ func handlePlayer(c *gin.Context) {
 	ctx := c.Request.Context()
 	action := c.Param("action")
 
-	// DEBUG
 	fmt.Println("Got request for:", action)
 
 	playerOpt := spotify.PlayOptions{
@@ -102,26 +101,45 @@ func pollSpotify() {
 
 	// Start the main Loop
 	for _ = range c {
-		playerState, err := client.PlayerState(context.Background())
-		if err != nil {
+		var playerState *spotify.PlayerState
+		// Check Expiry
+		// timeNow := time.Now()
+		if m, _ := time.ParseDuration("30s"); time.Until(oauthToken.Expiry) < m {
+			// if m, _ := time.ParseDuration("55m"); time.Until(oauthToken.Expiry) < m {
+
+			// if timeNow.After(oauthToken.Expiry) {
 			// Attempt to reAuth
 			oldToken := &oauth2.Token{
-				AccessToken:  oauthToken.AccessToken,
+				// AccessToken: oauthToken.AccessToken,
 				RefreshToken: oauthToken.RefreshToken,
 			}
-			client = spotify.New(auth.Client(context.Background(), oldToken))
+			// newToken, _ := client.Token()
+			fmt.Println("OLD TOKEN")
+			fmt.Println(oauthToken.AccessToken)
+			fmt.Println(oauthToken.RefreshToken)
+
+			client := spotify.New(auth.Client(context.Background(), oldToken))
 			token, err := client.Token()
 			if err != nil {
 				fmt.Println("SOMETHING WENT WRONG REFRESHING TOKEN")
 				fmt.Println(err.Error())
 			}
+
+			fmt.Println("NEW TOKEN")
+			fmt.Println(token.AccessToken)
+			fmt.Println(token.RefreshToken)
+
 			oauthToken.AccessToken = token.AccessToken
 			oauthToken.TokenType = token.TokenType
 			oauthToken.RefreshToken = token.RefreshToken
-			oauthToken.Expiry = token.Expiry.String()
+			oauthToken.Expiry = token.Expiry
+		}
 
-			// fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
-			// fmt.Println(err.Error())
+		// Get Player State
+		playerState, err = client.PlayerState(context.Background())
+		if err != nil {
+			fmt.Println("SOMETHING WENT GETTING PLAYER STATE")
+			fmt.Println(err.Error())
 		}
 		fmt.Println("CURRENT SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
 		fmt.Println("CURRENT PROGRESS: " + strconv.Itoa(playerState.Progress))
@@ -132,13 +150,19 @@ func pollSpotify() {
 			// Remove the track
 			if !fallbackPlaylist.Active {
 				if fallbackPlaylist.AddToPlaylist {
-					// DEBUG - Check if track is already in playlist
-					fmt.Println("ADDING TRACK TO FALLBACK PLAYLIST: " + currentTrackURI)
-					_, err := client.AddTracksToPlaylist(context.Background(), fallbackPlaylist.ID, spotify.ID(strings.Replace(string(currentTrackURI), "spotify:track:", "", -1)))
+					// Can't check if song is already in playlist - so just delete it
+					_, err := client.RemoveTracksFromPlaylist(context.Background(), fallbackPlaylist.ID, spotify.ID(strings.Replace(string(currentTrackURI), "spotify:track:", "", -1)))
 					if err != nil {
-						fmt.Println("SOMETHING WENT WRONG GETTING NEXT SONG")
+						fmt.Println("SOMETHING WENT WRONG REMOVING ITEM FROM PLAYLIST")
 						fmt.Println(err)
 					}
+					fmt.Println("ADDING TRACK TO FALLBACK PLAYLIST: " + currentTrackURI)
+					_, err = client.AddTracksToPlaylist(context.Background(), fallbackPlaylist.ID, spotify.ID(strings.Replace(string(currentTrackURI), "spotify:track:", "", -1)))
+					if err != nil {
+						fmt.Println("SOMETHING WENT WRONG ADDING ITEM TO PLAYLIST")
+						fmt.Println(err)
+					}
+
 				}
 				fmt.Println("REMOVING TRACK FROM QUEUE: " + currentTrackURI)
 				if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {

@@ -56,7 +56,7 @@ func main() {
 	)
 
 	// Load Database & Migrate the schema
-	db, err = gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	db, err = gorm.Open(sqlite.Open(os.Getenv("DB_PATH")), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -70,7 +70,7 @@ func main() {
 		Limit: uint(rateLimit),
 	})
 
-	mw := ratelimit.RateLimiter(store, &ratelimit.Options{
+	rateLimitMiddleWare := ratelimit.RateLimiter(store, &ratelimit.Options{
 		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
 			c.JSON(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
 		},
@@ -104,13 +104,12 @@ func main() {
 
 	r.GET("/search/:searchTerm", handleSearch)
 
-	r.POST("/votes/:action", mw, handleVote)
+	r.POST("/votes/:action", rateLimitMiddleWare, handleVote)
 
-	r.GET("/songs", getSongs)
-
-	r.GET("/songs/current", getSongCurrent)
-	r.GET("/songs/:songUri", getSongByUri)
-	r.POST("/songs/:action", handleSong)
+	r.GET("/tracks", getTracks)
+	r.GET("/tracks/current", getTrackCurrent)
+	r.GET("/tracks/:trackUri", getTrackByUri)
+	r.POST("/tracks/:action", handleTrack)
 
 	r.GET("/device/all", getAllDeviceIds)
 	r.GET("/device", getCurrentDeviceId)

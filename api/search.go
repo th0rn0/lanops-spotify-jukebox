@@ -10,14 +10,6 @@ import (
 )
 
 func handleSearch(c *gin.Context) {
-	// authHeader := c.Request.Header.Get("authorization")
-	// authToken := strings.Split(authHeader, " ")[1]
-
-	// authInput := oauth2.Token{
-	// 	AccessToken: authToken,
-	// }
-	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
-
 	ctx := c.Request.Context()
 	searchTerm := c.Param("searchTerm")
 	fmt.Println(searchTerm)
@@ -46,7 +38,7 @@ func handleSearch(c *gin.Context) {
 		}
 	}
 
-	// handle song results
+	// handle track results
 	if results.Tracks != nil {
 		fmt.Println("Tracks:")
 		for _, track := range results.Tracks.Tracks {

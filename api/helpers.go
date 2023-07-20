@@ -17,13 +17,9 @@ func getNextSong(excludeUri ...spotify.URI) (Track, error) {
 	} else {
 		nextTrack, err = getNextSongByVotes()
 	}
-	// DEBUG - assume no record - get from fallback playlist
-	// DEBUG - fix this
 	if err != nil {
+		// Assume no record - get from fallback playlist
 		nextSongFromPlayList := getRandomFallbackPlaylistItem()
-		// if err != nil {
-		// 	return nextTrack, err
-		// }
 		nextTrack.Artist = nextSongFromPlayList.Track.Track.Artists[0].Name
 		nextTrack.Name = nextSongFromPlayList.Track.Track.Name
 		nextTrack.URI = nextSongFromPlayList.Track.Track.URI
@@ -57,11 +53,12 @@ func getNextSongByVotes(excludeUri ...spotify.URI) (Track, error) {
 }
 
 func getRandomFallbackPlaylistItem() spotify.PlaylistItem {
-	// DEBUG - Set Random Offset - currently will only pull first 100 songs. Could set Limit higher?
-	// Get Random number for fallback playlist track
-	// We add a single track so that we can still check playerState.Progress == 0
 	fallBackPlaylist, _ := client.GetPlaylistItems(context.Background(), fallbackPlaylist.ID)
 
+	// Get playlist again with a limit of 1 and random offset between 1 and the total of tracks in the playlist
 	rand.Seed(time.Now().UnixNano())
-	return fallBackPlaylist.Items[(rand.Intn(len(fallBackPlaylist.Items)-1) + 1)]
+	randomOffset := rand.Intn(fallBackPlaylist.Total-1) + 1
+	fallBackPlaylist, _ = client.GetPlaylistItems(context.Background(), fallbackPlaylist.ID, spotify.Limit(1), spotify.Offset(randomOffset))
+
+	return fallBackPlaylist.Items[0]
 }

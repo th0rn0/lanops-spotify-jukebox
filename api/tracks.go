@@ -9,28 +9,19 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-func handleSong(c *gin.Context) {
-	// authHeader := c.Request.Header.Get("authorization")
-	// authToken := strings.Split(authHeader, " ")[1]
-
-	// authInput := oauth2.Token{
-	// 	AccessToken: authToken,
-	// }
-	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
-
-	var handleSongInput HandleSongInput
+func handleTrack(c *gin.Context) {
+	var handleTrackInput HandleTrackInput
 	var playerState *spotify.PlayerState
-	var returnStatus = http.StatusCreated
 	var track Track
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
 
-	if err := c.ShouldBindJSON(&handleSongInput); err != nil {
+	if err := c.ShouldBindJSON(&handleTrackInput); err != nil {
 		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
 		return
 	}
-	if handleSongInput.URI == "" {
+	if handleTrackInput.URI == "" {
 		c.JSON(http.StatusInternalServerError, "URI is required.")
 		return
 	}
@@ -38,7 +29,7 @@ func handleSong(c *gin.Context) {
 	switch action {
 	case "add":
 		// Get Track Info
-		track, err := client.GetTrack(ctx, spotify.ID(strings.Replace(string(handleSongInput.URI), "spotify:track:", "", -1)))
+		track, err := client.GetTrack(ctx, spotify.ID(strings.Replace(string(handleTrackInput.URI), "spotify:track:", "", -1)))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, err)
 			return
@@ -54,7 +45,7 @@ func handleSong(c *gin.Context) {
 			}
 			trackImages = append(trackImages, thisImage)
 		}
-		if err := db.Create(&Track{URI: handleSongInput.URI, Name: track.Name, Artist: track.Artists[0].Name, Votes: 1, Images: trackImages}).Error; err != nil {
+		if err := db.Create(&Track{URI: handleTrackInput.URI, Name: track.Name, Artist: track.Artists[0].Name, Votes: 1, Images: trackImages}).Error; err != nil {
 			if err.(sqlite3.Error).Code == 19 {
 				c.JSON(http.StatusBadRequest, "Song Already Exists")
 				return
@@ -62,10 +53,11 @@ func handleSong(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
-		// fallbackPlaylist.Active = false
+		c.JSON(http.StatusCreated, track)
+		return
 	case "remove":
 		playerState, _ = client.PlayerState(ctx)
-		if err := db.First(&track, Track{URI: handleSongInput.URI}).Error; err != nil {
+		if err := db.First(&track, Track{URI: handleTrackInput.URI}).Error; err != nil {
 			c.JSON(http.StatusNotFound, "Track Not Found")
 			return
 		}
@@ -86,55 +78,42 @@ func handleSong(c *gin.Context) {
 				return
 			}
 		}
-		returnStatus = http.StatusAccepted
+		c.JSON(http.StatusAccepted, track)
+		return
+	default:
+		c.JSON(http.StatusBadRequest, "Unknown Action")
+		return
 	}
-	// DEBUG - make this the proper response http.StatusCreated
-	c.JSON(returnStatus, "Ok")
 }
 
-func getSongByUri(c *gin.Context) {
+func getTrackByUri(c *gin.Context) {
 	var track Track
-	if err := db.Preload("Images").First(&track, Track{URI: spotify.URI(c.Param("songUri"))}).Error; err != nil {
-		// DEBUG - Correct Responses
+
+	if err := db.Preload("Images").First(&track, Track{URI: spotify.URI(c.Param("trackUri"))}).Error; err != nil {
 		c.JSON(http.StatusNotFound, "Track Not Found")
 		return
 	}
 	c.JSON(http.StatusAccepted, track)
 }
 
-func getSongs(c *gin.Context) {
+func getTracks(c *gin.Context) {
 	var tracks []Track
+
 	if err := db.Preload("Images").Order("votes DESC").Find(&tracks).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
-
 	c.JSON(http.StatusAccepted, tracks)
 }
 
-// func getSongNext() {
-
-// }
-
-func getSongCurrent(c *gin.Context) {
+func getTrackCurrent(c *gin.Context) {
 	var playerState *spotify.PlayerState
 	var err error
-	// var track Track
-
-	// authHeader := c.Request.Header.Get("authorization")
-	// authToken := strings.Split(authHeader, " ")[1]
-
-	// authInput := oauth2.Token{
-	// 	AccessToken: authToken,
-	// }
-
-	// client := spotify.New(auth.Client(c.Request.Context(), &authInput))
 
 	playerState, err = client.PlayerState(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
-
 	c.JSON(http.StatusAccepted, playerState.Item)
 }

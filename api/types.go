@@ -1,17 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/zmb3/spotify/v2"
 	"gorm.io/gorm"
 )
 
 type LoginToken struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	RefreshToken string `json:"refresh_token"`
-	Expiry       string `json:"expiry"`
+	AccessToken  string    `json:"access_token"`
+	TokenType    string    `json:"token_type"`
+	RefreshToken string    `json:"refresh_token"`
+	Expiry       time.Time `json:"expiry"`
 }
 
 type FallbackPlaylist struct {
@@ -62,7 +62,7 @@ type HandlePlayerInput struct {
 	URI spotify.URI `json:"uri"`
 }
 
-type HandleSongInput struct {
+type HandleTrackInput struct {
 	URI spotify.URI `json:"uri"`
 }
 
@@ -92,8 +92,7 @@ type Track struct {
 func (t *Track) BeforeDelete(tx *gorm.DB) (err error) {
 	var trackImages []TrackImage
 	if err := tx.Where("track_uri = ?", t.URI).Find(&trackImages).Error; err != nil {
-		// DEBUG - handle error
-		fmt.Println(err)
+		return err
 	}
 	for _, image := range trackImages {
 		tx.Model(&TrackImage{}).Unscoped().Delete(&image)
