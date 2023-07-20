@@ -31,8 +31,6 @@ func handleAuth(c *gin.Context) {
 	oauthToken.RefreshToken = tok.RefreshToken
 	oauthToken.Expiry = tok.Expiry
 
-	// ch <- client
-
 	// Return Auth to client
 	c.JSON(http.StatusOK, oauthToken)
 }

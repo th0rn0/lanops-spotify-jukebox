@@ -104,17 +104,11 @@ func pollSpotify() {
 	for _ = range c {
 		var playerState *spotify.PlayerState
 		// Check Expiry
-		// timeNow := time.Now()
 		if m, _ := time.ParseDuration("30s"); time.Until(oauthToken.Expiry) < m {
-			// if m, _ := time.ParseDuration("55m"); time.Until(oauthToken.Expiry) < m {
-
-			// if timeNow.After(oauthToken.Expiry) {
 			// Attempt to reAuth
 			oldToken := &oauth2.Token{
-				// AccessToken: oauthToken.AccessToken,
 				RefreshToken: oauthToken.RefreshToken,
 			}
-			// newToken, _ := client.Token()
 			fmt.Println("OLD TOKEN")
 			fmt.Println(oauthToken.AccessToken)
 			fmt.Println(oauthToken.RefreshToken)

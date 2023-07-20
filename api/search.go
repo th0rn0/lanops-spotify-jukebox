@@ -14,7 +14,6 @@ func handleSearch(c *gin.Context) {
 	searchTerm := c.Param("searchTerm")
 	fmt.Println(searchTerm)
 
-	// results, err := client.Search(ctx, searchTerm, spotify.SearchTypeArtist|spotify.SearchTypeTrack)
 	results, err := client.Search(ctx, searchTerm, spotify.SearchTypeTrack)
 
 	if err != nil {
