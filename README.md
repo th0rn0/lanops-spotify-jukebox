@@ -22,8 +22,7 @@ Written in GO using the https://github.com/zmb3/spotify package. Refer to the po
     - https://developer.spotify.com/documentation/web-api/concepts/apps -
 - Copy the example env file ```cp .env.example .env```
 - Fill in the ```.env``` file
-    - Set Device ID only if known
-    - Fallback Playlist can be any playlist. Use the full URI. If you wish to add queued songs to the playlist make sure the account being used has the sufficient permissions to the playlist
+    - Fallback Playlist can be any playlist. Use the full URI. If you wish to add queued songs to the playlist make sure the account being used has the sufficient permissions to the playlist. Make sure there is atleast 10 songs in this playlist
 
 ### Install Dependencies
 ```bash
