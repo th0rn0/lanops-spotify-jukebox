@@ -79,18 +79,18 @@ func main() {
 	)
 
 	// Set Device ID
-	dbDevice := Device{}
-	if err := db.First(&dbDevice).Error; err != nil {
-		// Assume no Device is Set
-		log.Println("-------------")
-		log.Println("NO DEVICE SET")
-		log.Println("-------------")
-	} else {
-		currentDevice.ID = spotify.ID(dbDevice.DeviceID)
-		currentDevice.Active = false
-		currentDevice.Name = dbDevice.Name
-		currentDevice.Type = dbDevice.Type
-	}
+	// dbDevice := Device{}
+	// if err := db.First(&dbDevice).Error; err != nil {
+	// 	// Assume no Device is Set
+	// 	log.Println("-------------")
+	// 	log.Println("NO DEVICE SET")
+	// 	log.Println("-------------")
+	// } else {
+	// 	currentDevice.ID = spotify.ID(dbDevice.DeviceID)
+	// 	currentDevice.Active = false
+	// 	currentDevice.Name = dbDevice.Name
+	// 	currentDevice.Type = dbDevice.Type
+	// }
 
 	addToPlaylist, _ := strconv.ParseBool(os.Getenv("FALLBACK_PLAYLIST_ADD_QUEUED"))
 	fallbackPlaylist = FallbackPlaylist{

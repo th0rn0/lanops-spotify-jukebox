@@ -236,13 +236,13 @@ func getAllDevices(c *gin.Context) {
 }
 
 func getCurrentDevice(c *gin.Context) {
+	fmt.Println(currentDevice)
 	c.JSON(http.StatusAccepted, currentDevice)
 }
 
 func setDevice(c *gin.Context) {
 	var setDeviceIdInput SetDeviceIdInput
 	var device Device
-	var currentDevice Device
 
 	if err := c.ShouldBindJSON(&setDeviceIdInput); err != nil {
 		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
@@ -260,31 +260,20 @@ func setDevice(c *gin.Context) {
 	for _, d := range devices {
 		if d.ID == setDeviceIdInput.DeviceID {
 			device.Active = d.Active
-			device.DeviceID = d.ID.String()
+			device.ID = d.ID.String()
 			device.Name = d.Name
 			device.Type = d.Type
 		}
 	}
 
-	if device.DeviceID == "" {
+	if device.ID == "" {
 		c.JSON(http.StatusNotFound, "Device Not Found")
 		return
 	}
 
-	// Delete current Device in DB
-	if currentDevice.DeviceID != "" {
-		if err := db.Unscoped().Delete(&currentDevice).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, err)
-			return
-		}
-	}
-
-	// Add Device to DB
-	if err := db.Create(&device).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-
-	currentDevice = device
+	currentDevice.ID = spotify.ID(device.ID)
+	currentDevice.Active = false
+	currentDevice.Name = device.Name
+	currentDevice.Type = device.Type
 	c.JSON(http.StatusAccepted, currentDevice)
 }

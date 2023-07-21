@@ -109,9 +109,8 @@ type TrackImage struct {
 }
 
 type Device struct {
-	gorm.Model
-	DeviceID string `json:"device_id"`
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Active   bool   `json:"is_active"`
+	ID     string `json:"device_id"`
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Active bool   `json:"is_active"`
 }
