@@ -361,13 +361,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8888/songs/add",
+							"raw": "localhost:8888/tracks/add",
 							"host": [
 								"localhost"
 							],
 							"port": "8888",
 							"path": [
-								"songs",
+								"tracks",
 								"add"
 							]
 						}
@@ -389,13 +389,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8888/songs/remove",
+							"raw": "localhost:8888/tracks/remove",
 							"host": [
 								"localhost"
 							],
 							"port": "8888",
 							"path": [
-								"songs",
+								"tracks",
 								"remove"
 							]
 						}

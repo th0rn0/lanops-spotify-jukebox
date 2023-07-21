@@ -47,12 +47,3 @@ Admin routes are behing Basic Auth Endpoints. The User is ```admin``` and the pa
 ## UI
 
 Some installation instructions.
-
-
-
-# Suggestions
-
-## API
-
-## UI
-
