@@ -126,7 +126,7 @@ func pollSpotify() {
 	currentDevice.Active = playerState.Device.Active
 	currentDevice.Volume = playerState.Device.Volume
 
-	c := time.Tick(10 * time.Second)
+	c := time.Tick(5 * time.Second)
 
 	// Start the main Loop
 	for _ = range c {
