@@ -16,6 +16,7 @@ import (
 
 func handlePlayer(c *gin.Context) {
 	var err error
+	var handleTrackVolumeInput HandlePlayerVolumeInput
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
@@ -52,30 +53,22 @@ func handlePlayer(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
-	case "volup":
-		if currentDevice.Volume == 100 {
-			c.JSON(http.StatusBadRequest, "Volume at Maximum")
+	case "vol":
+		if err := c.ShouldBindJSON(&handleTrackVolumeInput); err != nil {
+			c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
 			return
 		}
-		currentDevice.Volume = currentDevice.Volume + 10
-		err = client.Volume(ctx, currentDevice.Volume)
+		if !(handleTrackVolumeInput.Volume >= 0) && !(handleTrackVolumeInput.Volume <= 100) {
+			c.JSON(http.StatusBadRequest, "Volume must be between 0 and 100")
+			return
+		}
+		err = client.Volume(ctx, handleTrackVolumeInput.Volume)
 		if err != nil {
 			log.Print(err)
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
-	case "voldown":
-		if currentDevice.Volume == 0 {
-			c.JSON(http.StatusBadRequest, "Volume at Minimum")
-			return
-		}
-		currentDevice.Volume = currentDevice.Volume - 10
-		err = client.Volume(ctx, currentDevice.Volume)
-		if err != nil {
-			log.Print(err)
-			c.JSON(http.StatusInternalServerError, err)
-			return
-		}
+		currentDevice.Volume = handleTrackVolumeInput.Volume
 	case "skip":
 		track, _ := getNextSong(currentTrackURI)
 		playerOpt.URIs = []spotify.URI{track.URI}

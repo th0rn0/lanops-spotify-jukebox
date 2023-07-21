@@ -58,8 +58,8 @@ type GetTrackOutput struct {
 }
 
 // Inputs
-type HandlePlayerInput struct {
-	URI spotify.URI `json:"uri"`
+type HandlePlayerVolumeInput struct {
+	Volume int `json:"volume"`
 }
 
 type HandleTrackInput struct {

@@ -30,38 +30,28 @@
 					"response": []
 				},
 				{
-					"name": "volume up",
+					"name": "volume",
 					"request": {
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"volume\": 30\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "localhost:8888/player/volup",
+							"raw": "localhost:8888/player/vol",
 							"host": [
 								"localhost"
 							],
 							"port": "8888",
 							"path": [
 								"player",
-								"volup"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "volume down",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "localhost:8888/player/voldown",
-							"host": [
-								"localhost"
-							],
-							"port": "8888",
-							"path": [
-								"player",
-								"voldown"
+								"vol"
 							]
 						}
 					},
