@@ -286,5 +286,5 @@ func setDevice(c *gin.Context) {
 	}
 
 	currentDevice = device
-	c.JSON(http.StatusAccepted, device)
+	c.JSON(http.StatusAccepted, currentDevice)
 }
