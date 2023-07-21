@@ -134,14 +134,11 @@ func pollSpotify() {
 		// Check Expiry
 		if m, _ := time.ParseDuration("30s"); time.Until(oauthToken.Expiry) < m {
 			// Attempt to reAuth
-			oldToken := &oauth2.Token{
-				RefreshToken: oauthToken.RefreshToken,
-			}
 			fmt.Println("OLD TOKEN")
 			fmt.Println(oauthToken.AccessToken)
 			fmt.Println(oauthToken.RefreshToken)
 
-			client := spotify.New(auth.Client(context.Background(), oldToken))
+			client = spotify.New(auth.Client(context.Background(), &oauth2.Token{RefreshToken: oauthToken.RefreshToken}))
 			token, err := client.Token()
 			if err != nil {
 				fmt.Println("SOMETHING WENT WRONG REFRESHING TOKEN")
@@ -156,6 +153,8 @@ func pollSpotify() {
 			oauthToken.TokenType = token.TokenType
 			oauthToken.RefreshToken = token.RefreshToken
 			oauthToken.Expiry = token.Expiry
+		} else {
+			client = spotify.New(auth.Client(context.Background(), &oauth2.Token{AccessToken: oauthToken.AccessToken}))
 		}
 
 		// Get Player State
