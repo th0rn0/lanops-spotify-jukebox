@@ -1,15 +1,29 @@
 # Spotify Jukebox
 
+Spotify Jukebox System inititally created for [LanOps](https://lanops.co.uk). 
+
 ## API
+
+Written in GO using the https://github.com/zmb3/spotify package. Refer to the postman collection for the endpoints
+
+### Features
+
+- Add/Remove/Skip Tracks
+- Voting system - Vote songs up to the top of the queue or remove them entirely
+- Admin Controls
+- Volume Controls
+- Works with any Spotify Device
+- Fallback Playlist when no songs in queue
+- Add Queued songs to Fallback Playlist
 
 ### Prerequisites
 
 - Create App for Client and Secret Key. Make sure to set the callback url to the domain and have the callback path, for example ```http://localhost:8888/auth/callback```
-- - https://developer.spotify.com/documentation/web-api/concepts/apps -
+    - https://developer.spotify.com/documentation/web-api/concepts/apps -
 - Copy the example env file ```cp .env.example .env```
 - Fill in the ```.env``` file
-- - Set Device ID only if known
-- - Fallback Playlist can be any playlist. Use the full URI. If you wish to add queued songs to the playlist make sure the account being used has the sufficient permissions to the playlist
+    - Set Device ID only if known
+    - Fallback Playlist can be any playlist. Use the full URI. If you wish to add queued songs to the playlist make sure the account being used has the sufficient permissions to the playlist
 
 ### Install Dependencies
 ```bash
