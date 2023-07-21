@@ -25,13 +25,11 @@
 
 ### Usage
 
-To initate the player, you must first request the login link from the ```/auth/login``` endpoint. Then go to the returned link and log into Spotify. Once this has completed you can use all the endpoints.
+To initate the player, you must first request the login link from the ```/auth/login``` endpoint. Then go to the returned link and log into Spotify. Once this has completed you must use the ```localhost:8888/device``` endpoint to set the Device.
 
 To start the player goto the ```/player/start``` endpoint
 
-### Limitations
-
-Because of how the api polls for the progress of the current track, we cant just give spotify a full playlist to play, instead the API will pick songs at random should a playlist be given to play
+Admin routes are behing Basic Auth Endpoints. The User is ```admin``` and the password is set in the env.
 
 ## UI
 

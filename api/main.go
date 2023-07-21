@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	currentDevice    *spotify.PlayerDevice
+	currentDevice    spotify.PlayerDevice
 	fallbackPlaylist FallbackPlaylist
 	db               *gorm.DB
 	auth             *spotifyauth.Authenticator
@@ -66,11 +66,6 @@ func main() {
 		},
 	})
 
-	// Basic Auth Middleware
-	gin.BasicAuth(gin.Accounts{
-		"foo": "bar",
-	})
-
 	// Load Spotify API
 	auth = spotifyauth.New(
 		spotifyauth.WithRedirectURL(os.Getenv("CALLBACK_URL")),
@@ -85,11 +80,14 @@ func main() {
 
 	// Set Device ID
 	dbDevice := Device{}
-	if err := db.First(&dbDevice).Error; err == nil {
+	if err := db.First(&dbDevice).Error; err != nil {
+		log.Fatal(err)
+	}
+	if dbDevice.Name != "" {
+		currentDevice.ID = spotify.ID(dbDevice.DeviceID)
 		currentDevice.Active = false
 		currentDevice.Name = dbDevice.Name
 		currentDevice.Type = dbDevice.Type
-		currentDevice.Active = dbDevice.Active
 	} else {
 		// Assume no Device is Set
 		log.Println("-------------")
@@ -131,32 +129,18 @@ func main() {
 	r.POST("/votes/:action", rateLimitMiddleWare, handleVote)
 
 	r.GET("/auth/callback", handleAuth)
-	authorized.GET("/auth/login", serveLoginLink)
+	r.GET("/auth/login", serveLoginLink)
 
 	authorized.POST("/player/:action", handlePlayer)
 
-	authorized.GET("/tracks", getTracks)
-	authorized.GET("/tracks/current", getTrackCurrent)
-	authorized.GET("/tracks/:trackUri", getTrackByUri)
+	r.GET("/tracks", getTracks)
+	r.GET("/tracks/current", getTrackCurrent)
+	r.GET("/tracks/:trackUri", getTrackByUri)
 	authorized.POST("/tracks/:action", handleTrack)
 
-	authorized.GET("/device/all", getAllDeviceIds)
-	authorized.GET("/device", getCurrentDeviceId)
-	authorized.POST("/device", setDeviceId)
+	authorized.GET("/device/all", getAllDevices)
+	authorized.GET("/device", getCurrentDevice)
+	authorized.POST("/device", setDevice)
 
 	r.Run(":8888")
 }
-
-// func basicAuth(c *gin.Context) {
-// 	// Get the Basic Authentication credentials
-// 	user, password, hasAuth := c.Request.BasicAuth()
-// 	if hasAuth && user == "testuser" && password == "testpass" {
-// 		log.WithFields(log.Fields{
-// 			"user": user,
-// 		}).Info("User authenticated")
-// 	} else {
-// 		c.Abort()
-// 		c.Writer.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
-// 		return
-// 	}
-// }

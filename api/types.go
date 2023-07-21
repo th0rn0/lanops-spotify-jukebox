@@ -75,7 +75,7 @@ type GetSongByUriInput struct {
 }
 
 type SetDeviceIdInput struct {
-	DeviceId spotify.ID `json:"device_id"`
+	DeviceID spotify.ID `json:"device_id"`
 }
 
 // Models

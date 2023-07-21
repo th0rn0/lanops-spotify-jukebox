@@ -30,6 +30,44 @@
 					"response": []
 				},
 				{
+					"name": "volume up",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/player/volup",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"player",
+								"volup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "volume down",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/player/voldown",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"player",
+								"voldown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "play",
 					"request": {
 						"method": "POST",
@@ -109,15 +147,39 @@
 					"name": "get current device",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "localhost:8888/device",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"device"
+							]
+						}
 					},
 					"response": []
 				},
 				{
-					"name": "set current device (NOT IMPLEMENTED)",
+					"name": "set current device",
 					"request": {
 						"method": "POST",
-						"header": []
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"device_id\":  \"fd58af2f685a43a70e788f0616f80eae543ee60a\"\r\n}"
+						},
+						"url": {
+							"raw": "localhost:8888/device",
+							"host": [
+								"localhost"
+							],
+							"port": "8888",
+							"path": [
+								"device"
+							]
+						}
 					},
 					"response": []
 				}
@@ -259,7 +321,7 @@
 					"response": []
 				},
 				{
-					"name": "get by uri (should this pull from DB or spotify)",
+					"name": "get by uri",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},

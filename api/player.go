@@ -22,11 +22,15 @@ func handlePlayer(c *gin.Context) {
 
 	fmt.Println("Got request for:", action)
 
+	if currentDevice.ID == "" {
+		c.JSON(http.StatusInternalServerError, "No Device Set")
+		return
+	}
+
 	playerOpt := spotify.PlayOptions{
 		DeviceID: &currentDevice.ID,
 	}
 
-	// Play currentDevice set volume
 	switch action {
 	case "start":
 		go pollSpotify()
@@ -36,6 +40,7 @@ func handlePlayer(c *gin.Context) {
 			if err != nil {
 				log.Print(err)
 				c.JSON(http.StatusInternalServerError, err)
+				return
 			}
 		} else {
 			go pollSpotify()
@@ -45,6 +50,31 @@ func handlePlayer(c *gin.Context) {
 		if err != nil {
 			log.Print(err)
 			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	case "volup":
+		if currentDevice.Volume == 100 {
+			c.JSON(http.StatusBadRequest, "Volume at Maximum")
+			return
+		}
+		currentDevice.Volume = currentDevice.Volume + 10
+		err = client.Volume(ctx, currentDevice.Volume)
+		if err != nil {
+			log.Print(err)
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	case "voldown":
+		if currentDevice.Volume == 0 {
+			c.JSON(http.StatusBadRequest, "Volume at Minimum")
+			return
+		}
+		currentDevice.Volume = currentDevice.Volume - 10
+		err = client.Volume(ctx, currentDevice.Volume)
+		if err != nil {
+			log.Print(err)
+			c.JSON(http.StatusInternalServerError, err)
+			return
 		}
 	case "skip":
 		track, _ := getNextSong(currentTrackURI)
@@ -53,6 +83,7 @@ func handlePlayer(c *gin.Context) {
 		if err != nil {
 			log.Print(err)
 			c.JSON(http.StatusInternalServerError, err)
+			return
 		}
 		if !fallbackPlaylist.Active {
 			if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
@@ -67,7 +98,7 @@ func handlePlayer(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusAccepted, "Ok"+action)
+	c.JSON(http.StatusAccepted, "Ok: "+action)
 }
 
 func pollSpotify() {
@@ -97,6 +128,10 @@ func pollSpotify() {
 		currentTrackURI = track.URI
 		fmt.Println("STARTING SONG: " + track.Name + " - " + track.Artist)
 	}
+
+	// Update Current Device
+	currentDevice.Active = playerState.Device.Active
+	currentDevice.Volume = playerState.Device.Volume
 
 	c := time.Tick(10 * time.Second)
 
@@ -139,6 +174,10 @@ func pollSpotify() {
 		fmt.Println("CURRENT SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
 		fmt.Println("CURRENT PROGRESS: " + strconv.Itoa(playerState.Progress))
 		fmt.Println("FALLBACK STATUS: " + strconv.FormatBool(fallbackPlaylist.Active))
+
+		// Update Current Device
+		currentDevice.Active = playerState.Device.Active
+		currentDevice.Volume = playerState.Device.Volume
 
 		if playerState.Progress == 0 {
 			fmt.Println("LOADING NEXT SONG")
@@ -195,7 +234,7 @@ func pollSpotify() {
 	}
 }
 
-func getAllDeviceIds(c *gin.Context) {
+func getAllDevices(c *gin.Context) {
 	devices, err := client.PlayerDevices(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
@@ -204,11 +243,11 @@ func getAllDeviceIds(c *gin.Context) {
 	c.JSON(http.StatusAccepted, devices)
 }
 
-func getCurrentDeviceId(c *gin.Context) {
+func getCurrentDevice(c *gin.Context) {
 	c.JSON(http.StatusAccepted, currentDevice)
 }
 
-func setDeviceId(c *gin.Context) {
+func setDevice(c *gin.Context) {
 	var setDeviceIdInput SetDeviceIdInput
 	var device Device
 	var currentDevice Device
@@ -217,7 +256,7 @@ func setDeviceId(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
 		return
 	}
-	if setDeviceIdInput.DeviceId == "" {
+	if setDeviceIdInput.DeviceID == "" {
 		c.JSON(http.StatusInternalServerError, "Device ID is required")
 		return
 	}
@@ -227,7 +266,7 @@ func setDeviceId(c *gin.Context) {
 		return
 	}
 	for _, d := range devices {
-		if d.ID == setDeviceIdInput.DeviceId {
+		if d.ID == setDeviceIdInput.DeviceID {
 			device.Active = d.Active
 			device.DeviceID = d.ID.String()
 			device.Name = d.Name
