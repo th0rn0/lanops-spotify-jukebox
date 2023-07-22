@@ -45,7 +45,7 @@ func handleTrack(c *gin.Context) {
 			}
 			trackImages = append(trackImages, thisImage)
 		}
-		if err := db.Create(&Track{URI: handleTrackInput.URI, Name: track.Name, Artist: track.Artists[0].Name, Votes: 1, Images: trackImages}).Error; err != nil {
+		if err := db.Create(&Track{URI: handleTrackInput.URI, Name: track.Name, Artist: track.Artists[0].Name, Votes: 5, Images: trackImages}).Error; err != nil {
 			if err.(sqlite3.Error).Code == 19 {
 				c.JSON(http.StatusBadRequest, "Song Already Exists")
 				return
