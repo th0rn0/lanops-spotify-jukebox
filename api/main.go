@@ -36,13 +36,13 @@ var (
 
 func main() {
 	// Load Env
-	_ := godotenv.Load()
+	godotenv.Load()
 	// if err != nil {
 	// 	log.Fatal("Error loading .env file")
 	// }
 
 	// Load Database & Migrate the schema
-	db, err = gorm.Open(sqlite.Open(os.Getenv("DB_PATH")), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_PATH")), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect database")
 	}
