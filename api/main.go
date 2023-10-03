@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/zmb3/spotify/v2"
 
@@ -139,5 +140,16 @@ func main() {
 	authorized.GET("/device", getCurrentDevice)
 	authorized.POST("/device", setDevice)
 
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		// AllowMethods:     []string{"PUT", "PATCH"},
+		// AllowHeaders:     []string{"Origin"},
+		// ExposeHeaders:    []string{"Content-Length"},
+		// AllowCredentials: true,
+		// AllowOriginFunc: func(origin string) bool {
+		// 	return origin == "https://github.com"
+		// },
+		// MaxAge: 12 * time.Hour,
+	}))
 	r.Run(":8888")
 }
