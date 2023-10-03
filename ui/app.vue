@@ -3,12 +3,14 @@
         <div class="row">
             <div class="col">
                 <h3>Playlist</h3>
-                <PlaylistItem />
             </div>
             <div class="col">
                 <h3>Song Search</h3>
                 <input v-model="search" class="form-control" id="exampleFormControlInput1" placeholder="">
                 <button class="btn btn-primary" @click="searchTracks">Search</button>
+                <div class="accordion" id="searchList">
+                    <SearchItem v-for="track in searchResult.track" :track="track" />
+                </div>
             </div>
         </div>
     </div>
@@ -17,9 +19,9 @@
 <script lang="ts" setup>
 
     const search = ref("")
+    const searchResult = ref({})
 
     async function searchTracks() {
-        const tracks = await $fetch(`http://localhost:8888/search/${search.value}`).catch((error) => error.data)
-        console.log(tracks)
+        searchResult.value = await $fetch(`http://localhost:8888/search/${search.value}`).catch((error) => error.data)
     }
 </script>
