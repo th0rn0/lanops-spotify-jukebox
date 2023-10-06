@@ -6,6 +6,10 @@
                 <div v-for="track in playlist">
                     <img :src="track.images[2].url" />
                     {{ track.name }} - {{ track.artist }}
+                    <div class="btn-group">
+                        <button class="btn btn-success">Vote up</button>
+                        <button class="btn btn-danger">Vote down</button>
+                    </div>
                 </div>
             </div>
             <div class="col">

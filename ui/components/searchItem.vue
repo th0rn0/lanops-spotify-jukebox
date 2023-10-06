@@ -2,14 +2,17 @@
     <div class="accordion-item">
         <h2 class="accordion-header" id="headingOne">
             <button
-                class="accordion-button collapsed"
+                class="accordion-button collapsed py-0 ps-0"
                 type="button"
                 data-bs-toggle="collapse"
                 :data-bs-target="`#song-${track.id}`"
                 aria-expanded="false"
                 :aria-controls="track.id"
             >
-                {{ track.name }} - {{ track.artist }}
+                <img class="pe-3" :src="track.images[2].url" />
+                {{ track.name }}
+                <br />
+                {{ track.artist }}
             </button>
         </h2>
         <div
