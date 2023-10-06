@@ -14,8 +14,10 @@
             </div>
             <div class="col">
                 <h3>Song Search</h3>
-                <input v-model="search" class="form-control" id="exampleFormControlInput1" placeholder="">
-                <button class="btn btn-primary" @click="searchTracks">Search</button>
+                <div class="input-group mb-3">
+                    <input v-model="search" class="form-control" placeholder="Search">
+                    <button class="btn btn-primary" type="button" @click="searchTracks">Search</button>
+                </div>
                 <div class="accordion" id="searchList">
                     <SearchItem v-for="track in searchResult.track" :track="track" />
                 </div>
