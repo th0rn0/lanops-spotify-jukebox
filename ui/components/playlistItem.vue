@@ -11,7 +11,10 @@
             </h5>
         </td>
         <td class="align-middle">
-            <button class="btn btn-primary" @click="addToPlaylist" >Add to playlist</button>
+            <div class="btn-group">
+                <button class="btn btn-success">Vote up</button>
+                <button class="btn btn-danger">Vote down</button>
+            </div>
         </td>
     </tr>
 </template>
