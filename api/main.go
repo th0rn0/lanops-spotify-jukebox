@@ -141,8 +141,9 @@ func main() {
 	authorized.POST("/device", setDevice)
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		// AllowMethods:     []string{"PUT", "PATCH"},
+		AllowAllOrigins: true,
+		// AllowOrigins: []string{"*"},
+		// AllowMethods: []string{"*"},
 		// AllowHeaders:     []string{"Origin"},
 		// ExposeHeaders:    []string{"Content-Length"},
 		// AllowCredentials: true,
