@@ -11,8 +11,8 @@ import (
 
 func handleTrack(c *gin.Context) {
 	var handleTrackInput HandleTrackInput
-	var playerState *spotify.PlayerState
-	var track Track
+	// var playerState *spotify.PlayerState
+	// var track Track
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
@@ -55,31 +55,31 @@ func handleTrack(c *gin.Context) {
 		}
 		c.JSON(http.StatusCreated, track)
 		return
-	case "remove":
-		playerState, _ = client.PlayerState(ctx)
-		if err := db.First(&track, Track{URI: handleTrackInput.URI}).Error; err != nil {
-			c.JSON(http.StatusNotFound, "Track Not Found")
-			return
-		}
-		if err := db.Unscoped().Delete(&track).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, err)
-			return
-		}
-		// If currently playing is removed - play next in queue
-		if playerState.Playing && playerState.Item.URI == track.URI {
-			newTrack, _ := getNextSongByVotes()
-			playerOpt := spotify.PlayOptions{
-				DeviceID: &currentDevice.ID,
-				URIs:     []spotify.URI{newTrack.URI},
-			}
-			err := client.PlayOpt(ctx, &playerOpt)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, err)
-				return
-			}
-		}
-		c.JSON(http.StatusAccepted, track)
-		return
+	// case "remove":
+	// 	playerState, _ = client.PlayerState(ctx)
+	// 	if err := db.First(&track, Track{URI: handleTrackInput.URI}).Error; err != nil {
+	// 		c.JSON(http.StatusNotFound, "Track Not Found")
+	// 		return
+	// 	}
+	// 	if err := db.Unscoped().Delete(&track).Error; err != nil {
+	// 		c.JSON(http.StatusInternalServerError, err)
+	// 		return
+	// 	}
+	// 	// If currently playing is removed - play next in queue
+	// 	if playerState.Playing && playerState.Item.URI == track.URI {
+	// 		newTrack, _ := getNextSongByVotes()
+	// 		playerOpt := spotify.PlayOptions{
+	// 			DeviceID: &currentDevice.ID,
+	// 			URIs:     []spotify.URI{newTrack.URI},
+	// 		}
+	// 		err := client.PlayOpt(ctx, &playerOpt)
+	// 		if err != nil {
+	// 			c.JSON(http.StatusInternalServerError, err)
+	// 			return
+	// 		}
+	// 	}
+	// 	c.JSON(http.StatusAccepted, track)
+	// 	return
 	default:
 		c.JSON(http.StatusBadRequest, "Unknown Action")
 		return

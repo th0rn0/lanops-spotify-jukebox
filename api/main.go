@@ -117,6 +117,8 @@ func main() {
 	// Start Router
 	r := gin.Default()
 
+	r.Use(cors.Default())
+
 	authorized := r.Group("", gin.BasicAuth(gin.Accounts{
 		"admin": os.Getenv("ADMIN_PASSWORD"),
 	}))
@@ -134,23 +136,11 @@ func main() {
 	r.GET("/tracks", getTracks)
 	r.GET("/tracks/current", getTrackCurrent)
 	r.GET("/tracks/:trackUri", getTrackByUri)
-	authorized.POST("/tracks/:action", handleTrack)
+	r.POST("/tracks/:action", handleTrack)
 
 	authorized.GET("/device/all", getAllDevices)
 	authorized.GET("/device", getCurrentDevice)
 	authorized.POST("/device", setDevice)
 
-	r.Use(cors.New(cors.Config{
-		AllowAllOrigins: true,
-		// AllowOrigins: []string{"*"},
-		// AllowMethods: []string{"*"},
-		// AllowHeaders:     []string{"Origin"},
-		// ExposeHeaders:    []string{"Content-Length"},
-		// AllowCredentials: true,
-		// AllowOriginFunc: func(origin string) bool {
-		// 	return origin == "https://github.com"
-		// },
-		// MaxAge: 12 * time.Hour,
-	}))
 	r.Run(":8888")
 }
