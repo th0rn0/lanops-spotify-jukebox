@@ -86,6 +86,47 @@ func handleTrack(c *gin.Context) {
 	}
 }
 
+func removeTrack(c *gin.Context) {
+	var handleTrackInput HandleTrackInput
+	var playerState *spotify.PlayerState
+	var track Track
+
+	ctx := c.Request.Context()
+
+	if err := c.ShouldBindJSON(&handleTrackInput); err != nil {
+		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
+		return
+	}
+	if handleTrackInput.URI == "" {
+		c.JSON(http.StatusInternalServerError, "URI is required.")
+		return
+	}
+
+	playerState, _ = client.PlayerState(ctx)
+	if err := db.First(&track, Track{URI: handleTrackInput.URI}).Error; err != nil {
+		c.JSON(http.StatusNotFound, "Track Not Found")
+		return
+	}
+	if err := db.Unscoped().Delete(&track).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	// If currently playing is removed - play next in queue
+	if playerState.Playing && playerState.Item.URI == track.URI {
+		newTrack, _ := getNextSongByVotes()
+		playerOpt := spotify.PlayOptions{
+			DeviceID: &currentDevice.ID,
+			URIs:     []spotify.URI{newTrack.URI},
+		}
+		err := client.PlayOpt(ctx, &playerOpt)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	}
+	c.JSON(http.StatusAccepted, track)
+}
+
 func getTrackByUri(c *gin.Context) {
 	var track Track
 

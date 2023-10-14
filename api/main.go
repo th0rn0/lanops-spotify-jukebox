@@ -137,6 +137,7 @@ func main() {
 	r.GET("/tracks/current", getTrackCurrent)
 	r.GET("/tracks/:trackUri", getTrackByUri)
 	r.POST("/tracks/:action", handleTrack)
+	authorized.POST("/tracks/remove", removeTrack)
 
 	authorized.GET("/device/all", getAllDevices)
 	authorized.GET("/device", getCurrentDevice)
