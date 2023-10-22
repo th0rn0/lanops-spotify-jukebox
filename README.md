@@ -46,4 +46,19 @@ Admin routes are behing Basic Auth Endpoints. The User is ```admin``` and the pa
 
 ## UI
 
-Some installation instructions.
+### Prerequisites
+
+- Copy the example env file ```cp .env.example .env```
+- Fill in the ```.env``` file
+
+### Install Dependencies
+```bash
+    cd ui
+    npm install
+```
+
+### Run
+
+```bash
+    npm run dev
+```
