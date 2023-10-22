@@ -7,9 +7,10 @@
 </template>
 
 <script lang="ts" setup>
+    const runtimeConfig = useRuntimeConfig()
     const playlist = ref([]);
 
     onMounted(async () => {
-        playlist.value = await $fetch(`http://localhost:8888/tracks`).catch((error) => error.data)
+        playlist.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks`).catch((error) => error.data)
     });
 </script>

@@ -17,23 +17,24 @@
 </template>
 
 <script lang="ts" setup>
-export interface Props {
-    track: {
-        id: string;
-        name: string;
-        artist: string;
-        images: {
-            height: number;
-            width: number;
-            url: string;
-        }[]
+    export interface Props {
+        track: {
+            id: string;
+            name: string;
+            artist: string;
+            images: {
+                height: number;
+                width: number;
+                url: string;
+            }[]
+        }
     }
-}
 
-const props = defineProps<Props>()
+    const props = defineProps<Props>()
+    const runtimeConfig = useRuntimeConfig()
 
-function addToPlaylist() {
-    console.log(props.track.id)
-    $fetch("http://localhost:8888/tracks/add", {method: 'POST', body: { uri: `spotify:track:${props.track.id}` }})
-}
+    function addToPlaylist() {
+        console.log(props.track.id)
+        $fetch(runtimeConfig.public.apiEndpoint + "/tracks/add", {method: 'POST', body: { uri: `spotify:track:${props.track.id}` }})
+    }
 </script>

@@ -16,8 +16,9 @@
 
     const search = ref("")
     const searchResult = ref({});
+    const runtimeConfig = useRuntimeConfig()
 
     async function searchTracks() {
-        searchResult.value = await $fetch(`http://localhost:8888/search/${search.value}`).catch((error) => error.data)
+        searchResult.value = await $fetch(runtimeConfig.public.apiEndpoint + `/search/${search.value}`).catch((error) => error.data)
     }
 </script>
