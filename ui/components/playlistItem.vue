@@ -1,20 +1,20 @@
 <template>
-    <tr>
+    <tr class="d-flex align-items-stretch">
         <td>
             <img :src="track.images[2].url" />
         </td>
-        <td class="align-middle">
+        <td class="flex-grow-1 align-middle">
             <h5>
                 {{ track.name }}
                 <br />
                 <small class="text-muted">{{ track.artist }}</small>
             </h5>
         </td>
-        <td class="align-middle">
-            <div class="btn-group">
-                <button class="btn btn-success">Vote up</button>
-                <button class="btn btn-danger">Vote down</button>
-            </div>
+        <td>
+            <div class="btn-group-vertical" role="group" aria-label="Basic example">
+                <button type="button" class="btn btn-success btn-sm"  @click="voteUp">Vote up</button>
+                <button type="button" class="btn btn-danger btn-sm"  @click="voteDown">Vote down</button>
+                </div>
         </td>
     </tr>
 </template>
@@ -22,7 +22,7 @@
 <script lang="ts" setup>
     export interface Props {
         track: {
-            id: string;
+            uri: string;
             name: string;
             artist: string;
             images: {
@@ -36,8 +36,11 @@
     const props = defineProps<Props>()
     const runtimeConfig = useRuntimeConfig()
 
-    function addToPlaylist() {
-        console.log(props.track.id)
-        $fetch(runtimeConfig.public.apiEndpoint + "/tracks/add", {method: 'POST', body: { uri: `spotify:track:${props.track.id}` }})
+    function voteUp() {
+        $fetch("http://localhost:8888/votes/add", {method: 'POST', body: { uri: props.track.uri }})
+    }
+
+    function voteDown() {
+        $fetch("http://localhost:8888/votes/remove", {method: 'POST', body: { uri: props.track.uri }})
     }
 </script>

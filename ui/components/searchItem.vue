@@ -1,9 +1,9 @@
 <template>
-    <tr>
+    <tr class="d-flex align-items-stretch">
         <td>
             <img :src="track.images[2].url" />
         </td>
-        <td class="align-middle">
+        <td class="flex-grow-1 align-middle">
             <h5>
                 {{ track.name }}
                 <br />
@@ -34,7 +34,6 @@
     const runtimeConfig = useRuntimeConfig()
 
     function addToPlaylist() {
-        console.log(props.track.id)
         $fetch(runtimeConfig.public.apiEndpoint + "/tracks/add", {method: 'POST', body: { uri: `spotify:track:${props.track.id}` }})
     }
 </script>
