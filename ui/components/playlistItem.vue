@@ -20,6 +20,8 @@
 </template>
 
 <script lang="ts" setup>
+    const emit = defineEmits(["voted"]);
+    
     export interface Props {
         track: {
             uri: string;
@@ -36,11 +38,13 @@
     const props = defineProps<Props>()
     const runtimeConfig = useRuntimeConfig()
 
-    function voteUp() {
-        $fetch("http://localhost:8888/votes/add", {method: 'POST', body: { uri: props.track.uri }})
+    async function voteUp() {
+        await $fetch("http://localhost:8888/votes/add", {method: 'POST', body: { uri: props.track.uri }})
+        emit('voted');
     }
 
-    function voteDown() {
-        $fetch("http://localhost:8888/votes/remove", {method: 'POST', body: { uri: props.track.uri }})
+    async function voteDown() {
+        await $fetch("http://localhost:8888/votes/remove", {method: 'POST', body: { uri: props.track.uri }})
+        emit('voted');
     }
 </script>

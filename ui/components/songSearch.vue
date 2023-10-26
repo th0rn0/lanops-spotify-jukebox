@@ -7,12 +7,14 @@
     </form>
     <table class="table table-striped">
         <tbody>
-            <SearchItem v-for="track in searchResult.track" :track="track" />
+            <SearchItem v-for="track in searchResult.track" :track="track" @songAdded="$emit('songAdded');" />
         </tbody>
     </table>
 </template>
 
 <script lang="ts" setup>
+
+    const emit = defineEmits(["songAdded"]);
 
     const search = ref("")
     const searchResult = ref({});
