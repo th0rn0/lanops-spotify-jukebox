@@ -30,10 +30,13 @@
         }
     }
 
+    const emit = defineEmits(["songAdded"]);
+
     const props = defineProps<Props>()
     const runtimeConfig = useRuntimeConfig()
 
-    function addToPlaylist() {
-        $fetch(runtimeConfig.public.apiEndpoint + "/tracks/add", {method: 'POST', body: { uri: `spotify:track:${props.track.id}` }})
+    async function addToPlaylist() {
+        await $fetch(runtimeConfig.public.apiEndpoint + "/tracks/add", {method: 'POST', body: { uri: `spotify:track:${props.track.id}` }});
+        emit('songAdded');
     }
 </script>

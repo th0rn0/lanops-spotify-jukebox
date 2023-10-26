@@ -5,13 +5,13 @@
                 <h3>Playlist</h3>
                 <table class="table table-striped">
                     <tbody>
-                        <PlaylistItem v-for="track in playlist" :track="track"/>
+                        <PlaylistItem v-for="track in playlist" :track="track" @voted="refreshPlaylist"/>
                     </tbody>
                 </table>
             </div>
             <div class="col h-100" style="overflow-y: auto;">
                 <h3>Song Search</h3>
-                <SongSearch />
+                <SongSearch @songAdded="refreshPlaylist" />
             </div>
         </div>
     </div>
@@ -32,19 +32,18 @@
     const runtimeConfig = useRuntimeConfig()
 
     const playlist = ref([]);
+    const nowPlaying = ref({});
 
-    onMounted(async () => {
-        
-    });
-
-    const nowPlaying = ref({})
+    async function refreshPlaylist () {
+        playlist.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks`).catch((error) => error.data)
+    }
     
     onMounted(async () => {
-        playlist.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks`).catch((error) => error.data)
-        nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
+        refreshPlaylist();
+        // nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
         setInterval(async () => {
-            playlist.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks`).catch((error) => error.data)
-            nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
+            refreshPlaylist();
+            // nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
         }, 10000);
     })
 </script>
