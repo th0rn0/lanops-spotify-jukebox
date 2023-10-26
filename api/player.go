@@ -260,7 +260,7 @@ func setDevice(c *gin.Context) {
 	for _, d := range devices {
 		if d.ID == setDeviceIdInput.DeviceID {
 			device.Active = d.Active
-			device.ID = d.ID.String()
+			device.ID = d.ID
 			device.Name = d.Name
 			device.Type = d.Type
 		}
@@ -271,9 +271,24 @@ func setDevice(c *gin.Context) {
 		return
 	}
 
-	currentDevice.ID = spotify.ID(device.ID)
-	currentDevice.Active = false
+	currentDevice.ID = device.ID
 	currentDevice.Name = device.Name
+	currentDevice.Active = device.Active
 	currentDevice.Type = device.Type
+
+	var dbDevice Device
+
+	if err := db.First(&dbDevice, Device{}).Error; err == nil {
+		if err := db.Unscoped().Delete(&dbDevice).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	if err := db.Create(&Device{ID: currentDevice.ID, Name: currentDevice.Name, Active: currentDevice.Active, Type: currentDevice.Type}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
 	c.JSON(http.StatusAccepted, currentDevice)
 }

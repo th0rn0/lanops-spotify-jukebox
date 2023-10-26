@@ -7,13 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type LoginToken struct {
-	AccessToken  string    `json:"access_token"`
-	TokenType    string    `json:"token_type"`
-	RefreshToken string    `json:"refresh_token"`
-	Expiry       time.Time `json:"expiry"`
-}
-
 type FallbackPlaylist struct {
 	URI           spotify.URI
 	ID            spotify.ID
@@ -100,6 +93,13 @@ func (t *Track) BeforeDelete(tx *gorm.DB) (err error) {
 	return
 }
 
+type LoginToken struct {
+	AccessToken  string    `gorm:"primaryKey" json:"access_token"`
+	TokenType    string    `json:"token_type"`
+	RefreshToken string    `json:"refresh_token"`
+	Expiry       time.Time `json:"expiry"`
+}
+
 type TrackImage struct {
 	ID       uint   `gorm:"primarykey"`
 	Height   int    `json:"height"`
@@ -109,8 +109,8 @@ type TrackImage struct {
 }
 
 type Device struct {
-	ID     string `json:"device_id"`
-	Name   string `json:"name"`
-	Type   string `json:"type"`
-	Active bool   `json:"is_active"`
+	ID     spotify.ID `gorm:"primaryKey" json:"device_id"`
+	Name   string     `json:"name"`
+	Type   string     `json:"type"`
+	Active bool       `json:"is_active"`
 }

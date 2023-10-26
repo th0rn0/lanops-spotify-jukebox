@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/joho/godotenv"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
+	"golang.org/x/oauth2"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -50,6 +52,7 @@ func main() {
 	db.AutoMigrate(&Track{})
 	db.AutoMigrate(&TrackImage{})
 	db.AutoMigrate(&Device{})
+	db.AutoMigrate(&LoginToken{})
 
 	// Set Rate Limiting
 	rateLimit, _ := strconv.ParseUint(os.Getenv("MAXIMUM_VOTES_PER_HOUR"), 10, 32)
@@ -79,20 +82,48 @@ func main() {
 		),
 	)
 
-	// Set Device ID
-	// dbDevice := Device{}
-	// if err := db.First(&dbDevice).Error; err != nil {
-	// 	// Assume no Device is Set
-	// 	log.Println("-------------")
-	// 	log.Println("NO DEVICE SET")
-	// 	log.Println("-------------")
-	// } else {
-	// 	currentDevice.ID = spotify.ID(dbDevice.DeviceID)
-	// 	currentDevice.Active = false
-	// 	currentDevice.Name = dbDevice.Name
-	// 	currentDevice.Type = dbDevice.Type
-	// }
+	// Set Spotify Login Token
+	dbLoginToken := LoginToken{}
+	if err := db.First(&dbLoginToken).Error; err != nil {
+		// Assume no Login is Set
+		log.Println("-------------")
+		log.Println("NO LOGIN SET")
+		log.Println("-------------")
+	} else {
+		oauthToken.AccessToken = dbLoginToken.AccessToken
+		oauthToken.TokenType = dbLoginToken.TokenType
+		oauthToken.RefreshToken = dbLoginToken.RefreshToken
+		oauthToken.Expiry = dbLoginToken.Expiry
+		client = spotify.New(auth.Client(context.TODO(), &oauth2.Token{
+			AccessToken:  dbLoginToken.AccessToken,
+			TokenType:    dbLoginToken.TokenType,
+			RefreshToken: dbLoginToken.RefreshToken,
+			Expiry:       dbLoginToken.Expiry,
+		}))
+		log.Println("-------------")
+		log.Println("LOGIN SET")
+		log.Println("-------------")
+	}
 
+	// Set Device ID
+	dbDevice := Device{}
+	if err := db.First(&dbDevice).Error; err != nil {
+		// Assume no Device is Set
+		log.Println("-------------")
+		log.Println("NO DEVICE SET")
+		log.Println("-------------")
+	} else {
+		currentDevice.ID = dbDevice.ID
+		currentDevice.Active = false
+		currentDevice.Name = dbDevice.Name
+		currentDevice.Type = dbDevice.Type
+		log.Println("-------------")
+		log.Println("DEVICE SET")
+		log.Println(dbDevice.Name)
+		log.Println("-------------")
+	}
+
+	// Set Fallback Playlist
 	addToPlaylist, _ := strconv.ParseBool(os.Getenv("FALLBACK_PLAYLIST_ADD_QUEUED"))
 	fallbackPlaylist = FallbackPlaylist{
 		URI:           spotify.URI(os.Getenv("FALLBACK_PLAYLIST_URI")),

@@ -20,7 +20,7 @@
         <div class="d-flex">
             <img :src="nowPlaying.album.images[2].url" />
             <h5 class="ps-3">
-                Track name here
+                {{ nowPlaying.name }}
                 <br />
                 <small class="text-muted">{{ nowPlaying.artists[0].name }}</small>
             </h5>

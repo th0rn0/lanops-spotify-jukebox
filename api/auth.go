@@ -31,6 +31,20 @@ func handleAuth(c *gin.Context) {
 	oauthToken.RefreshToken = tok.RefreshToken
 	oauthToken.Expiry = tok.Expiry
 
+	var dbLoginToken LoginToken
+
+	if err := db.First(&dbLoginToken, LoginToken{}).Error; err == nil {
+		if err := db.Unscoped().Delete(&dbLoginToken).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	if err := db.Create(&LoginToken{AccessToken: oauthToken.AccessToken, TokenType: oauthToken.TokenType, RefreshToken: oauthToken.RefreshToken, Expiry: oauthToken.Expiry}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
 	// Return Auth to client
 	c.JSON(http.StatusOK, oauthToken)
 }
