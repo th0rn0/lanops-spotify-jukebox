@@ -153,6 +153,21 @@ func pollSpotify() {
 			oauthToken.TokenType = token.TokenType
 			oauthToken.RefreshToken = token.RefreshToken
 			oauthToken.Expiry = token.Expiry
+
+			var dbLoginToken LoginToken
+
+			if err := db.First(&dbLoginToken, LoginToken{}).Error; err == nil {
+				if err := db.Unscoped().Delete(&dbLoginToken).Error; err != nil {
+					fmt.Println("SOMETHING WENT WRONG DELETING OLD TOKEN")
+					fmt.Println(err.Error())
+				}
+			}
+
+			if err := db.Create(&LoginToken{AccessToken: oauthToken.AccessToken, TokenType: oauthToken.TokenType, RefreshToken: oauthToken.RefreshToken, Expiry: oauthToken.Expiry}).Error; err != nil {
+				fmt.Println("SOMETHING WENT WRONG SAVING NEW TOKEN")
+				fmt.Println(err.Error())
+			}
+
 		} else {
 			client = spotify.New(auth.Client(context.Background(), &oauth2.Token{AccessToken: oauthToken.AccessToken}))
 		}
