@@ -40,10 +40,10 @@
     
     onMounted(async () => {
         refreshPlaylist();
-        // nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
+        nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
         setInterval(async () => {
             refreshPlaylist();
-            // nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
+            nowPlaying.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks/current`).catch((error) => error.data)
         }, 10000);
     })
 </script>
