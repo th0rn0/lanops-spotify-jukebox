@@ -39,12 +39,12 @@
     const runtimeConfig = useRuntimeConfig()
 
     async function voteUp() {
-        await $fetch("http://localhost:8888/votes/add", {method: 'POST', body: { uri: props.track.uri }})
+        await $fetch(`${runtimeConfig.public.apiEndpoint}/votes/add`, {method: 'POST', body: { uri: props.track.uri }})
         emit('voted');
     }
 
     async function voteDown() {
-        await $fetch("http://localhost:8888/votes/remove", {method: 'POST', body: { uri: props.track.uri }})
+        await $fetch(`${runtimeConfig.public.apiEndpoint}/votes/remove`, {method: 'POST', body: { uri: props.track.uri }})
         emit('voted');
     }
 </script>
