@@ -2,15 +2,15 @@
     <div class="container vh-100" style="padding-bottom: 150px;">
         <div class="row h-100">
             <div class="col h-100" style="overflow-y: auto;">
-                <h3>Playlist</h3>
-                <table class="table table-striped">
+                <h3 class="text-white">Playlist</h3>
+                <table class="table table-dark table-striped">
                     <tbody>
                         <PlaylistItem v-for="track in playlist" :track="track" @voted="refreshPlaylist"/>
                     </tbody>
                 </table>
             </div>
             <div class="col h-100" style="overflow-y: auto;">
-                <h3>Song Search</h3>
+                <h3 class="text-white">Song Search</h3>
                 <SongSearch @songAdded="refreshPlaylist" />
             </div>
         </div>

@@ -7,7 +7,7 @@
             <h5>
                 {{ track.name }}
                 <br />
-                <small class="text-muted">{{ track.artist }}</small>
+                <small class="text-white-50">{{ track.artist }}</small>
             </h5>
         </td>
         <td class="align-middle">

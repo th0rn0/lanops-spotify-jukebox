@@ -5,7 +5,7 @@
             <button class="btn btn-primary" type="submit">Search</button>
         </div>
     </form>
-    <table class="table table-striped">
+    <table class="table table-dark table-striped">
         <tbody>
             <SearchItem v-for="track in searchResult.track" :track="track" @songAdded="$emit('songAdded');" />
         </tbody>
