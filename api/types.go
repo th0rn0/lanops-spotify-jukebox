@@ -113,4 +113,5 @@ type Device struct {
 	Name   string     `json:"name"`
 	Type   string     `json:"type"`
 	Active bool       `json:"is_active"`
+	Volume int        `json:"volume"`
 }

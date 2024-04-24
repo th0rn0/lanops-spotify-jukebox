@@ -87,7 +87,6 @@ func handlePlayer(c *gin.Context) {
 				return
 			}
 		}
-
 	}
 
 	c.JSON(http.StatusAccepted, "Ok: "+action)
@@ -163,13 +162,25 @@ func pollSpotify() {
 		if err != nil {
 			logger.Err(err).Msg("SOMETHING WENT GETTING PLAYER STATE")
 		}
-		logger.Info().Msg("CURRENT SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
-		logger.Info().Msg("CURRENT PROGRESS: " + strconv.Itoa(playerState.Progress))
-		logger.Info().Msg("FALLBACK STATUS: " + strconv.FormatBool(fallbackPlaylist.Active))
+		logger.Info().Msg(fmt.Sprintf("CURRENT SONG: %s - %s", playerState.Item.Name, playerState.Item.Artists[0].Name))
+		logger.Info().Msg(fmt.Sprintf("CURRENT PROGRESS: %s / %s", strconv.Itoa(playerState.Progress), strconv.Itoa(playerState.Item.Duration)))
+		logger.Info().Msg(fmt.Sprintf("FALLBACK STATUS: %s", strconv.FormatBool(fallbackPlaylist.Active)))
 
 		// Update Current Device
 		currentDevice.Active = playerState.Device.Active
 		currentDevice.Volume = playerState.Device.Volume
+
+		dbDevice := Device{}
+		if err := db.First(&dbDevice).Error; err != nil {
+			// Assume no Device is Set
+			logger.Fatal().Msg("NO DEVICE SET")
+		} else {
+			dbDevice.Active = currentDevice.Active
+			dbDevice.Volume = currentDevice.Volume
+			db.Save(&dbDevice)
+			// logger.Info().Msg("DEVICE SET")
+			// logger.Info().Msg(dbDevice.Name)
+		}
 
 		if playerState.Progress == 0 {
 			logger.Info().Msg("LOADING NEXT SONG")

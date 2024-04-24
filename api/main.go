@@ -33,6 +33,7 @@ var (
 	oauthToken       LoginToken
 	logger           zerolog.Logger
 	rateLimit        uint64
+	adminPassword    string
 )
 
 var (
@@ -123,6 +124,9 @@ func init() {
 	// Set Rate Limiting
 	rateLimit, _ = strconv.ParseUint(os.Getenv("MAXIMUM_VOTES_PER_HOUR"), 10, 32)
 
+	// Admin Password
+	adminPassword = os.Getenv("ADMIN_PASSWORD")
+
 	logger.Info().Msg("Initalization Complete")
 }
 
@@ -151,8 +155,11 @@ func main() {
 	r.Use(cors.Default())
 
 	authorized := r.Group("", gin.BasicAuth(gin.Accounts{
-		"admin": os.Getenv("ADMIN_PASSWORD"),
+		"admin": adminPassword,
 	}))
+
+	// Attempt to reboot previous session
+	go StartPollingSpotifyIfActive()
 
 	// Set Routes
 	r.GET("/search/:searchTerm", handleSearch)
@@ -175,4 +182,15 @@ func main() {
 	authorized.POST("/device", setDevice)
 
 	r.Run(":8888")
+}
+
+func StartPollingSpotifyIfActive() {
+	time.Sleep(8 * time.Second)
+	dbDevice := Device{}
+	if err := db.First(&dbDevice).Error; err != nil {
+		logger.Info().Msg("No Device Set - Please Manually Set the Device!")
+	} else if dbDevice.Active {
+		logger.Info().Msg("Attempting to Auto Start Spotify")
+		go pollSpotify()
+	}
 }
