@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: resources/docker/api/Dockerfile
+    env_file: $PWD/api/.env
+    ports:
+      - 8888:8888
+    
+  ui:
+    build:
+      context: .
+      dockerfile: resources/docker/ui/Dockerfile
+    env_file: $PWD/ui/.env
+    ports:
+      - 80:3000

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,11 +16,11 @@ func serveLoginLink(c *gin.Context) {
 func handleAuth(c *gin.Context) {
 	tok, err := auth.Token(c.Request.Context(), state, c.Request)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal().Err(err)
 		c.JSON(http.StatusInternalServerError, err)
 	}
 	if st := c.Request.FormValue("state"); st != state {
-		log.Fatalf("State mismatch: %s != %s\n", st, state)
+		logger.Fatal().Msg(fmt.Sprintf("State mismatch: %s != %s\n", st, state))
 		c.JSON(http.StatusNotFound, err)
 	}
 	client = spotify.New(auth.Client(c.Request.Context(), tok))

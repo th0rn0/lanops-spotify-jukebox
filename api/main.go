@@ -2,23 +2,24 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
-	spotifyauth "github.com/zmb3/spotify/v2/auth"
-	"golang.org/x/oauth2"
-
+	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
+	"golang.org/x/oauth2"
+
 	"github.com/zmb3/spotify/v2"
 
-	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
 )
 
 var (
@@ -30,6 +31,8 @@ var (
 	currentTrackURI  spotify.URI
 	client           *spotify.Client
 	oauthToken       LoginToken
+	logger           zerolog.Logger
+	rateLimit        uint64
 )
 
 var (
@@ -37,38 +40,28 @@ var (
 	pollingSpotify = false
 )
 
-func main() {
-	// Load Env
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+func init() {
+	var err error
+
+	logger = zerolog.New(
+		zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339},
+	).Level(zerolog.TraceLevel).With().Timestamp().Caller().Logger()
+	logger.Info().Msg("Initializing Jukebox API")
+
+	// Env Variables
+	logger.Info().Msg("Loading Environment Variables")
+	godotenv.Load()
 
 	// Load Database & Migrate the schema
 	db, err = gorm.Open(sqlite.Open(os.Getenv("DB_PATH")), &gorm.Config{})
+	logger.Info().Msg("Connecting to Database")
 	if err != nil {
-		log.Fatal("failed to connect database")
+		logger.Fatal().Err(err).Msg("Error Connecting to Database")
 	}
 	db.AutoMigrate(&Track{})
 	db.AutoMigrate(&TrackImage{})
 	db.AutoMigrate(&Device{})
 	db.AutoMigrate(&LoginToken{})
-
-	// Set Rate Limiting
-	rateLimit, _ := strconv.ParseUint(os.Getenv("MAXIMUM_VOTES_PER_HOUR"), 10, 32)
-	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
-		Rate:  time.Hour,
-		Limit: uint(rateLimit),
-	})
-
-	rateLimitMiddleWare := ratelimit.RateLimiter(store, &ratelimit.Options{
-		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
-			c.JSON(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
-		},
-		KeyFunc: func(c *gin.Context) string {
-			return c.ClientIP() + c.Request.UserAgent()
-		},
-	})
 
 	// Load Spotify API
 	auth = spotifyauth.New(
@@ -86,9 +79,7 @@ func main() {
 	dbLoginToken := LoginToken{}
 	if err := db.First(&dbLoginToken).Error; err != nil {
 		// Assume no Login is Set
-		log.Println("-------------")
-		log.Println("NO LOGIN SET")
-		log.Println("-------------")
+		logger.Info().Msg("NO LOGIN SET")
 	} else {
 		oauthToken.AccessToken = dbLoginToken.AccessToken
 		oauthToken.TokenType = dbLoginToken.TokenType
@@ -100,28 +91,25 @@ func main() {
 			RefreshToken: dbLoginToken.RefreshToken,
 			Expiry:       dbLoginToken.Expiry,
 		}))
-		log.Println("-------------")
-		log.Println("LOGIN SET")
-		log.Println("-------------")
+		logger.Info().Msg("LOGIN SET")
 	}
 
 	// Set Device ID
 	dbDevice := Device{}
 	if err := db.First(&dbDevice).Error; err != nil {
 		// Assume no Device is Set
-		log.Println("-------------")
-		log.Println("NO DEVICE SET")
-		log.Println("-------------")
+		logger.Info().Msg("NO DEVICE SET")
 	} else {
 		currentDevice.ID = dbDevice.ID
 		currentDevice.Active = false
 		currentDevice.Name = dbDevice.Name
 		currentDevice.Type = dbDevice.Type
-		log.Println("-------------")
-		log.Println("DEVICE SET")
-		log.Println(dbDevice.Name)
-		log.Println("-------------")
+		logger.Info().Msg("DEVICE SET")
+		logger.Info().Msg(dbDevice.Name)
 	}
+
+	// Set Minimum Votes
+	minimumVotes, _ = strconv.ParseInt(os.Getenv("MINIMUM_VOTES_TO_REMOVE"), 10, 64)
 
 	// Set Fallback Playlist
 	addToPlaylist, _ := strconv.ParseBool(os.Getenv("FALLBACK_PLAYLIST_ADD_QUEUED"))
@@ -132,20 +120,32 @@ func main() {
 		AddToPlaylist: addToPlaylist,
 	}
 
-	// Set Minimum Votes
-	minimumVotes, _ = strconv.ParseInt(os.Getenv("MINIMUM_VOTES_TO_REMOVE"), 10, 64)
+	// Set Rate Limiting
+	rateLimit, _ = strconv.ParseUint(os.Getenv("MAXIMUM_VOTES_PER_HOUR"), 10, 32)
 
-	// Set Logging to file
-	logToFile, _ := strconv.ParseBool(os.Getenv("APP_LOG_TO_FILE"))
-	if logToFile {
-		file, err := os.OpenFile(os.Getenv("APP_LOG_PATH"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.SetOutput(file)
-	}
+	logger.Info().Msg("Initalization Complete")
+}
 
-	// Start Router
+func main() {
+	logger.Info().Msg("Starting Jukebox API")
+
+	// Start Listeners and Polling
+	logger.Info().Msg("Starting GIN Web Server")
+	// Set Rate Limiting
+	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
+		Rate:  time.Hour,
+		Limit: uint(rateLimit),
+	})
+
+	rateLimitMiddleWare := ratelimit.RateLimiter(store, &ratelimit.Options{
+		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
+			c.JSON(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
+		},
+		KeyFunc: func(c *gin.Context) string {
+			return c.ClientIP() + c.Request.UserAgent()
+		},
+	})
+
 	r := gin.Default()
 
 	r.Use(cors.Default())
