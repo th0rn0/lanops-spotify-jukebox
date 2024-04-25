@@ -5,7 +5,10 @@ services:
     build:
       context: .
       dockerfile: resources/docker/api/Dockerfile
+    volumes:
+      - ./api:/app
     env_file: $PWD/api/.env
+    command: go run .
     ports:
       - 8888:8888
     
@@ -13,6 +16,9 @@ services:
     build:
       context: .
       dockerfile: resources/docker/ui/Dockerfile
+    volumes:
+      - ./ui:/app
     env_file: $PWD/ui/.env
+    command: npm run dev
     ports:
       - 80:3000
