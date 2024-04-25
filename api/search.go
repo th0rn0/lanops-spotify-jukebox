@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +15,7 @@ func handleSearch(c *gin.Context) {
 
 	results, err := client.Search(ctx, searchTerm, spotify.SearchTypeTrack)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal().Err(err)
 	}
 
 	// handle artist results

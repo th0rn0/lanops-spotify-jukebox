@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,7 +20,7 @@ func handlePlayer(c *gin.Context) {
 	ctx := c.Request.Context()
 	action := c.Param("action")
 
-	fmt.Println("Got request for:", action)
+	logger.Info().Msg("Got request for: " + action)
 
 	if currentDevice.ID == "" {
 		c.JSON(http.StatusInternalServerError, "No Device Set")
@@ -39,7 +38,7 @@ func handlePlayer(c *gin.Context) {
 		if pollingSpotify {
 			err = client.PlayOpt(ctx, &playerOpt)
 			if err != nil {
-				log.Print(err)
+				logger.Err(err)
 				c.JSON(http.StatusInternalServerError, err)
 				return
 			}
@@ -49,7 +48,7 @@ func handlePlayer(c *gin.Context) {
 	case "pause":
 		err = client.PauseOpt(ctx, &playerOpt)
 		if err != nil {
-			log.Print(err)
+			logger.Err(err)
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
@@ -64,7 +63,7 @@ func handlePlayer(c *gin.Context) {
 		}
 		err = client.Volume(ctx, handleTrackVolumeInput.Volume)
 		if err != nil {
-			log.Print(err)
+			logger.Err(err)
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
@@ -74,7 +73,7 @@ func handlePlayer(c *gin.Context) {
 		playerOpt.URIs = []spotify.URI{track.URI}
 		err = client.NextOpt(ctx, &playerOpt)
 		if err != nil {
-			log.Print(err)
+			logger.Err(err)
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
@@ -88,7 +87,6 @@ func handlePlayer(c *gin.Context) {
 				return
 			}
 		}
-
 	}
 
 	c.JSON(http.StatusAccepted, "Ok: "+action)
@@ -99,27 +97,25 @@ func pollSpotify() {
 
 	pollingSpotify = true
 
-	fmt.Println("STARTING JUKEBOX WITH DEVICE: " + currentDevice.ID)
+	logger.Info().Msg(fmt.Sprintf("STARTING JUKEBOX WITH DEVICE: %s", currentDevice.ID))
 
 	playerState, err := client.PlayerState(context.Background())
 	if err != nil {
-		fmt.Println("SOMETHING WENT WRONG GETTING PLAYER")
-		fmt.Println(err)
+		logger.Err(err).Msg("SOMETHING WENT WRONG GETTING PLAYER")
 	}
 	if playerState.Playing {
 		fallbackPlaylist.Active = true
 		currentTrackURI = playerState.Item.URI
-		fmt.Println("CONTINUING SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
+		logger.Info().Msg("CONTINUING SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
 	} else {
 		track, _ := getNextSong()
 		err := client.PlayOpt(context.Background(), &spotify.PlayOptions{DeviceID: &currentDevice.ID, URIs: []spotify.URI{track.URI}})
 		if err != nil {
-			fmt.Println("SOMETHING WENT WRONG STARTING PLAYER")
-			fmt.Println(err)
+			logger.Err(err).Msg("SOMETHING WENT WRONG STARTING PLAYER")
 		}
 		fallbackPlaylist.Active = track.FromFallBackPlaylist
 		currentTrackURI = track.URI
-		fmt.Println("STARTING SONG: " + track.Name + " - " + track.Artist)
+		logger.Info().Msg("STARTING SONG: " + track.Name + " - " + track.Artist)
 	}
 
 	// Update Current Device
@@ -134,20 +130,11 @@ func pollSpotify() {
 		// Check Expiry
 		if m, _ := time.ParseDuration("30s"); time.Until(oauthToken.Expiry) < m {
 			// Attempt to reAuth
-			fmt.Println("OLD TOKEN")
-			fmt.Println(oauthToken.AccessToken)
-			fmt.Println(oauthToken.RefreshToken)
-
 			client = spotify.New(auth.Client(context.Background(), &oauth2.Token{RefreshToken: oauthToken.RefreshToken}))
 			token, err := client.Token()
 			if err != nil {
-				fmt.Println("SOMETHING WENT WRONG REFRESHING TOKEN")
-				fmt.Println(err.Error())
+				logger.Err(err).Msg("SOMETHING WENT WRONG REFRESHING TOKEN")
 			}
-
-			fmt.Println("NEW TOKEN")
-			fmt.Println(token.AccessToken)
-			fmt.Println(token.RefreshToken)
 
 			oauthToken.AccessToken = token.AccessToken
 			oauthToken.TokenType = token.TokenType
@@ -158,14 +145,12 @@ func pollSpotify() {
 
 			if err := db.First(&dbLoginToken, LoginToken{}).Error; err == nil {
 				if err := db.Unscoped().Delete(&dbLoginToken).Error; err != nil {
-					fmt.Println("SOMETHING WENT WRONG DELETING OLD TOKEN")
-					fmt.Println(err.Error())
+					logger.Err(err).Msg("SOMETHING WENT WRONG DELETING OLD TOKEN")
 				}
 			}
 
 			if err := db.Create(&LoginToken{AccessToken: oauthToken.AccessToken, TokenType: oauthToken.TokenType, RefreshToken: oauthToken.RefreshToken, Expiry: oauthToken.Expiry}).Error; err != nil {
-				fmt.Println("SOMETHING WENT WRONG SAVING NEW TOKEN")
-				fmt.Println(err.Error())
+				logger.Err(err).Msg("SOMETHING WENT WRONG SAVING NEW TOKEN")
 			}
 
 		} else {
@@ -175,58 +160,66 @@ func pollSpotify() {
 		// Get Player State
 		playerState, err = client.PlayerState(context.Background())
 		if err != nil {
-			fmt.Println("SOMETHING WENT GETTING PLAYER STATE")
-			fmt.Println(err.Error())
+			logger.Err(err).Msg("SOMETHING WENT GETTING PLAYER STATE")
 		}
-		fmt.Println("CURRENT SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
-		fmt.Println("CURRENT PROGRESS: " + strconv.Itoa(playerState.Progress))
-		fmt.Println("FALLBACK STATUS: " + strconv.FormatBool(fallbackPlaylist.Active))
+		logger.Info().Msg(fmt.Sprintf("CURRENT SONG: %s - %s", playerState.Item.Name, playerState.Item.Artists[0].Name))
+		logger.Info().Msg(fmt.Sprintf("CURRENT PROGRESS: %s / %s", strconv.Itoa(playerState.Progress), strconv.Itoa(playerState.Item.Duration)))
+		logger.Info().Msg(fmt.Sprintf("FALLBACK STATUS: %s", strconv.FormatBool(fallbackPlaylist.Active)))
 
 		// Update Current Device
 		currentDevice.Active = playerState.Device.Active
 		currentDevice.Volume = playerState.Device.Volume
 
+		dbDevice := Device{}
+		if err := db.First(&dbDevice).Error; err != nil {
+			// Assume no Device is Set
+			logger.Fatal().Msg("NO DEVICE SET")
+		} else {
+			dbDevice.Active = currentDevice.Active
+			dbDevice.Volume = currentDevice.Volume
+			db.Save(&dbDevice)
+			// logger.Info().Msg("DEVICE SET")
+			// logger.Info().Msg(dbDevice.Name)
+		}
+
 		if playerState.Progress == 0 {
-			fmt.Println("LOADING NEXT SONG")
+			logger.Info().Msg("LOADING NEXT SONG")
 			// Remove the track
 			if !fallbackPlaylist.Active {
 				if fallbackPlaylist.AddToPlaylist {
 					// Can't check if song is already in playlist - so just delete it
 					_, err := client.RemoveTracksFromPlaylist(context.Background(), fallbackPlaylist.ID, spotify.ID(strings.Replace(string(currentTrackURI), "spotify:track:", "", -1)))
 					if err != nil {
-						fmt.Println("SOMETHING WENT WRONG REMOVING ITEM FROM PLAYLIST")
-						fmt.Println(err)
+						logger.Err(err).Msg("SOMETHING WENT WRONG REMOVING ITEM FROM PLAYLIST")
 					}
-					fmt.Println("ADDING TRACK TO FALLBACK PLAYLIST: " + currentTrackURI)
+					logger.Info().Msg(fmt.Sprintf("ADDING TRACK TO FALLBACK PLAYLIST: %s", currentTrackURI))
 					_, err = client.AddTracksToPlaylist(context.Background(), fallbackPlaylist.ID, spotify.ID(strings.Replace(string(currentTrackURI), "spotify:track:", "", -1)))
 					if err != nil {
-						fmt.Println("SOMETHING WENT WRONG ADDING ITEM TO PLAYLIST")
-						fmt.Println(err)
+						logger.Err(err).Msg("SOMETHING WENT WRONG ADDING ITEM TO PLAYLIST")
 					}
 
 				}
-				fmt.Println("REMOVING TRACK FROM QUEUE: " + currentTrackURI)
+				logger.Info().Msg(fmt.Sprintf("REMOVING TRACK FROM QUEUE: %s", currentTrackURI))
 				if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
-					fmt.Println(err)
+					logger.Err(err)
 				}
 				if err := db.Unscoped().Delete(&track).Error; err != nil {
-					fmt.Println(err)
+					logger.Err(err)
 				}
 			}
 			// Get the next track
 			track, err = getNextSong()
 			if err != nil {
-				fmt.Println("SOMETHING WENT WRONG GETTING NEXT SONG")
-				fmt.Println(err)
+				logger.Err(err).Msg("SOMETHING WENT WRONG GETTING NEXT SONG")
 			}
 			currentTrackURI = track.URI
 			fallbackPlaylist.Active = track.FromFallBackPlaylist
 
 			if fallbackPlaylist.Active {
-				fmt.Println("No More Tracks - Using fall back playlist")
+				logger.Info().Msg("No More Tracks - Using fall back playlist")
 			}
 
-			fmt.Println("NEXT SONG: " + track.Name + " - " + track.Artist)
+			logger.Info().Msg("NEXT SONG: " + track.Name + " - " + track.Artist)
 
 			playerOpt := spotify.PlayOptions{
 				DeviceID: &currentDevice.ID,
@@ -235,7 +228,7 @@ func pollSpotify() {
 			err = client.PlayOpt(context.Background(), &playerOpt)
 
 			if err != nil {
-				fmt.Println(err)
+				logger.Err(err)
 			}
 		}
 	}
@@ -251,7 +244,7 @@ func getAllDevices(c *gin.Context) {
 }
 
 func getCurrentDevice(c *gin.Context) {
-	fmt.Println(currentDevice)
+	logger.Info().Msg(fmt.Sprintf("%s", currentDevice))
 	c.JSON(http.StatusAccepted, currentDevice)
 }
 
