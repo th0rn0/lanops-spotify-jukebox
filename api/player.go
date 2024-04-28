@@ -68,6 +68,25 @@ func handlePlayer(c *gin.Context) {
 			return
 		}
 		currentDevice.Volume = handleTrackVolumeInput.Volume
+	case "skip":
+		track, _ := getNextSong(currentTrackURI)
+		playerOpt.URIs = []spotify.URI{track.URI}
+		err = client.NextOpt(ctx, &playerOpt)
+		if err != nil {
+			logger.Err(err)
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		if !fallbackPlaylist.Active {
+			if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
+				c.JSON(http.StatusNotFound, "Track Not Found")
+				return
+			}
+			if err := db.Unscoped().Delete(&track).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, err)
+				return
+			}
+		}
 	}
 
 	c.JSON(http.StatusAccepted, "Ok: "+action)
