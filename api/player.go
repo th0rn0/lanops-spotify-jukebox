@@ -68,25 +68,6 @@ func handlePlayer(c *gin.Context) {
 			return
 		}
 		currentDevice.Volume = handleTrackVolumeInput.Volume
-	case "skip":
-		track, _ := getNextSong(currentTrackURI)
-		playerOpt.URIs = []spotify.URI{track.URI}
-		err = client.NextOpt(ctx, &playerOpt)
-		if err != nil {
-			logger.Err(err)
-			c.JSON(http.StatusInternalServerError, err)
-			return
-		}
-		if !fallbackPlaylist.Active {
-			if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
-				c.JSON(http.StatusNotFound, "Track Not Found")
-				return
-			}
-			if err := db.Unscoped().Delete(&track).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, err)
-				return
-			}
-		}
 	}
 
 	c.JSON(http.StatusAccepted, "Ok: "+action)
@@ -104,8 +85,12 @@ func pollSpotify() {
 		logger.Err(err).Msg("SOMETHING WENT WRONG GETTING PLAYER")
 	}
 	if playerState.Playing {
-		fallbackPlaylist.Active = true
+		fallbackPlaylist.Active = false
 		currentTrackURI = playerState.Item.URI
+		if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
+			// Assume we cant find the track so must be from fallback playlist
+			fallbackPlaylist.Active = true
+		}
 		logger.Info().Msg("CONTINUING SONG: " + playerState.Item.Name + " - " + playerState.Item.Artists[0].Name)
 	} else {
 		track, _ := getNextSong()
@@ -178,12 +163,11 @@ func pollSpotify() {
 			dbDevice.Active = currentDevice.Active
 			dbDevice.Volume = currentDevice.Volume
 			db.Save(&dbDevice)
-			// logger.Info().Msg("DEVICE SET")
-			// logger.Info().Msg(dbDevice.Name)
 		}
 
 		if playerState.Progress == 0 {
 			logger.Info().Msg("LOADING NEXT SONG")
+			voteToSkipCurrent = voteToSkipDefault
 			// Remove the track
 			if !fallbackPlaylist.Active {
 				if fallbackPlaylist.AddToPlaylist {

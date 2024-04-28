@@ -25,6 +25,8 @@ func getNextSong(excludeUri ...spotify.URI) (Track, error) {
 		nextTrack.URI = nextSongFromPlayList.Track.Track.URI
 		nextTrack.FromFallBackPlaylist = true
 
+		fallbackPlaylist.Active = true
+
 		for _, trackImage := range nextSongFromPlayList.Track.Track.Album.Images {
 
 			nextTrack.Images = append(nextTrack.Images, TrackImage{
@@ -33,6 +35,8 @@ func getNextSong(excludeUri ...spotify.URI) (Track, error) {
 				URL:    trackImage.URL,
 			})
 		}
+	} else {
+		fallbackPlaylist.Active = false
 	}
 	return nextTrack, nil
 }

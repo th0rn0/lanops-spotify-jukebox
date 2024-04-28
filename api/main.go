@@ -23,17 +23,20 @@ import (
 )
 
 var (
-	currentDevice    spotify.PlayerDevice
-	fallbackPlaylist FallbackPlaylist
-	db               *gorm.DB
-	auth             *spotifyauth.Authenticator
-	minimumVotes     int64
-	currentTrackURI  spotify.URI
-	client           *spotify.Client
-	oauthToken       LoginToken
-	logger           zerolog.Logger
-	rateLimit        uint64
-	adminPassword    string
+	currentDevice            spotify.PlayerDevice
+	fallbackPlaylist         FallbackPlaylist
+	db                       *gorm.DB
+	auth                     *spotifyauth.Authenticator
+	currentTrackURI          spotify.URI
+	client                   *spotify.Client
+	oauthToken               LoginToken
+	logger                   zerolog.Logger
+	adminPassword            string
+	voteStandardRateLimit    uint64
+	voteStandardMinimumVotes int64
+	voteToSkipDefault        int64
+	voteToSkipCurrent        int64
+	voteToSkipEnabled        bool
 )
 
 var (
@@ -110,7 +113,16 @@ func init() {
 	}
 
 	// Set Minimum Votes
-	minimumVotes, _ = strconv.ParseInt(os.Getenv("MINIMUM_VOTES_TO_REMOVE"), 10, 64)
+	voteStandardMinimumVotes, _ = strconv.ParseInt(os.Getenv("VOTE_STANDARD_MINIMUM_TO_REMOVE"), 10, 64)
+
+	voteToSkipDefault, _ = strconv.ParseInt(os.Getenv("VOTES_TO_SKIP"), 10, 64)
+	voteToSkipCurrent = voteToSkipDefault
+
+	// Set Vote Method
+	voteToSkipEnabled = false
+	if os.Getenv("VOTE_METHOD") == "skip" {
+		voteToSkipEnabled = true
+	}
 
 	// Set Fallback Playlist
 	addToPlaylist, _ := strconv.ParseBool(os.Getenv("FALLBACK_PLAYLIST_ADD_QUEUED"))
@@ -122,7 +134,7 @@ func init() {
 	}
 
 	// Set Rate Limiting
-	rateLimit, _ = strconv.ParseUint(os.Getenv("MAXIMUM_VOTES_PER_HOUR"), 10, 32)
+	voteStandardRateLimit, _ = strconv.ParseUint(os.Getenv("VOTE_STANDARD_MAXIMUM_PER_HOUR"), 10, 32)
 
 	// Admin Password
 	adminPassword = os.Getenv("ADMIN_PASSWORD")
@@ -136,12 +148,26 @@ func main() {
 	// Start Listeners and Polling
 	logger.Info().Msg("Starting GIN Web Server")
 	// Set Rate Limiting
-	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
+	rateLimitVoteStandardMiddleWareStore := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
 		Rate:  time.Hour,
-		Limit: uint(rateLimit),
+		Limit: uint(voteStandardRateLimit),
 	})
 
-	rateLimitMiddleWare := ratelimit.RateLimiter(store, &ratelimit.Options{
+	rateLimitVoteStandardMiddleWare := ratelimit.RateLimiter(rateLimitVoteStandardMiddleWareStore, &ratelimit.Options{
+		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
+			c.JSON(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
+		},
+		KeyFunc: func(c *gin.Context) string {
+			return c.ClientIP() + c.Request.UserAgent()
+		},
+	})
+
+	rateLimitVoteSkipMiddleWareStore := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
+		Rate:  time.Minute * 4,
+		Limit: 1,
+	})
+
+	rateLimitVoteSkipMiddleWare := ratelimit.RateLimiter(rateLimitVoteSkipMiddleWareStore, &ratelimit.Options{
 		ErrorHandler: func(c *gin.Context, info ratelimit.Info) {
 			c.JSON(429, "Too many requests. Try again in "+time.Until(info.ResetTime).String())
 		},
@@ -164,7 +190,11 @@ func main() {
 	// Set Routes
 	r.GET("/search/:searchTerm", handleSearch)
 
-	r.POST("/votes/:action", rateLimitMiddleWare, handleVote)
+	if voteToSkipEnabled {
+		r.POST("/votes/skip", rateLimitVoteSkipMiddleWare, handleVoteSkip)
+	} else {
+		r.POST("/votes/:action", rateLimitVoteStandardMiddleWare, handleVote)
+	}
 
 	r.GET("/auth/callback", handleAuth)
 	r.GET("/auth/login", serveLoginLink)
