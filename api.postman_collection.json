@@ -4,7 +4,7 @@
 		"name": "api",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "478495",
-		"_collection_link": "https://spotifyjukebox.postman.co/workspace/Team-Workspace~3f13c662-6654-4cb7-8423-ab97247e5d11/collection/478495-8e9d10df-509a-497b-854f-356daa3d0710?action=share&creator=478495&source=collection_link"
+		"_collection_link": "https://spotifyjukebox.postman.co/workspace/Team-Workspace~3f13c662-6654-4cb7-8423-ab97247e5d11/collection/478495-8e9d10df-509a-497b-854f-356daa3d0710?action=share&source=collection_link&creator=478495"
 	},
 	"item": [
 		{
@@ -16,11 +16,10 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:8888/player/start",
+							"raw": "{{apiUrl}}/player/start",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"player",
 								"start"
@@ -44,33 +43,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8888/player/vol",
+							"raw": "{{apiUrl}}/player/vol",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"player",
 								"vol"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "play",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "localhost:8888/player/play",
-							"host": [
-								"localhost"
-							],
-							"port": "8888",
-							"path": [
-								"player",
-								"play"
 							]
 						}
 					},
@@ -82,11 +61,10 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:8888/player/pause",
+							"raw": "{{apiUrl}}/player/pause",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"player",
 								"pause"
@@ -101,11 +79,10 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:8888/player/skip",
+							"raw": "{{apiUrl}}/player/skip",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"player",
 								"skip"
@@ -120,11 +97,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8888/device/all",
+							"raw": "{{apiUrl}}/device/all",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"device",
 								"all"
@@ -139,11 +115,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8888/device",
+							"raw": "{{apiUrl}}/device",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"device"
 							]
@@ -158,14 +133,13 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n   \"device_id\":  \"fd58af2f685a43a70e788f0616f80eae543ee60a\"\r\n}"
+							"raw": "{\r\n   \"device_id\":  \"68e2142bc377685bd457684ef5819f1675ee8a1c\"\r\n}"
 						},
 						"url": {
-							"raw": "localhost:8888/device",
+							"raw": "{{apiUrl}}/device",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"device"
 							]
@@ -199,7 +173,7 @@
 			"name": "votes",
 			"item": [
 				{
-					"name": "add vote",
+					"name": "add",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -213,11 +187,10 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8888/votes/add",
+							"raw": "{{apiUrl}}/votes/add",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"votes",
 								"add"
@@ -227,7 +200,7 @@
 					"response": []
 				},
 				{
-					"name": "remove vote",
+					"name": "remove",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -241,14 +214,40 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8888/votes/remove",
+							"raw": "{{apiUrl}}/votes/remove",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"votes",
 								"remove"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skip",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/votes/add",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"votes",
+								"add"
 							]
 						}
 					},
@@ -272,11 +271,10 @@
 							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}"
 						},
 						"url": {
-							"raw": "localhost:8888/tracks",
+							"raw": "{{apiUrl}}/tracks",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"tracks"
 							]
@@ -297,11 +295,10 @@
 							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}"
 						},
 						"url": {
-							"raw": "localhost:8888/tracks/current",
+							"raw": "{{apiUrl}}/tracks/current",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"tracks",
 								"current"
@@ -323,11 +320,10 @@
 							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}"
 						},
 						"url": {
-							"raw": "localhost:8888/tracks/spotify:track:6rsoBvxrlxdmqJyGPPciyq",
+							"raw": "{{apiUrl}}/tracks/spotify:track:6rsoBvxrlxdmqJyGPPciyq",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"tracks",
 								"spotify:track:6rsoBvxrlxdmqJyGPPciyq"
@@ -351,11 +347,10 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8888/tracks/add",
+							"raw": "{{apiUrl}}/tracks/add",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"tracks",
 								"add"
@@ -379,11 +374,10 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8888/tracks/remove",
+							"raw": "{{apiUrl}}/tracks/remove",
 							"host": [
-								"localhost"
+								"{{apiUrl}}"
 							],
-							"port": "8888",
 							"path": [
 								"tracks",
 								"remove"
@@ -397,29 +391,13 @@
 		{
 			"name": "login",
 			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "orange",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin",
-							"type": "string"
-						}
-					]
-				},
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8888/auth/login",
+					"raw": "{{apiUrl}}/auth/login",
 					"host": [
-						"localhost"
+						"{{apiUrl}}"
 					],
-					"port": "8888",
 					"path": [
 						"auth",
 						"login"
@@ -434,11 +412,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8888/search/slipknot",
+					"raw": "{{apiUrl}}/search/slipknot",
 					"host": [
-						"localhost"
+						"{{apiUrl}}"
 					],
-					"port": "8888",
 					"path": [
 						"search",
 						"slipknot"
@@ -453,7 +430,7 @@
 		"basic": [
 			{
 				"key": "password",
-				"value": "orange",
+				"value": "changeme",
 				"type": "string"
 			},
 			{
@@ -487,6 +464,11 @@
 		{
 			"key": "accessKey",
 			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "apiUrl",
+			"value": "http://localhost:8888",
 			"type": "string"
 		}
 	]

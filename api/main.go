@@ -185,7 +185,7 @@ func main() {
 	}))
 
 	// Attempt to reboot previous session
-	go StartPollingSpotifyIfActive()
+	go startPollingSpotifyIfActive()
 
 	// Set Routes
 	r.GET("/search/:searchTerm", handleSearch)
@@ -214,7 +214,7 @@ func main() {
 	r.Run(":8888")
 }
 
-func StartPollingSpotifyIfActive() {
+func startPollingSpotifyIfActive() {
 	time.Sleep(8 * time.Second)
 	dbDevice := Device{}
 	if err := db.First(&dbDevice).Error; err != nil {
