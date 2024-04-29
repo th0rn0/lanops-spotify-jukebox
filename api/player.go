@@ -34,18 +34,8 @@ func handlePlayer(c *gin.Context) {
 	switch action {
 	case "start":
 		go pollSpotify()
-	case "play":
-		if pollingSpotify {
-			err = client.PlayOpt(ctx, &playerOpt)
-			if err != nil {
-				logger.Err(err)
-				c.JSON(http.StatusInternalServerError, err)
-				return
-			}
-		} else {
-			go pollSpotify()
-		}
-	case "pause":
+	case "stop":
+		pollingSpotify = false
 		err = client.PauseOpt(ctx, &playerOpt)
 		if err != nil {
 			logger.Err(err)
@@ -69,7 +59,7 @@ func handlePlayer(c *gin.Context) {
 		}
 		currentDevice.Volume = handleTrackVolumeInput.Volume
 	case "skip":
-		track, _ := getNextSong(currentTrackURI)
+		track, _ := getNextSongExcludeURI(currentTrackURI)
 		playerOpt.URIs = []spotify.URI{track.URI}
 		err = client.NextOpt(ctx, &playerOpt)
 		if err != nil {
@@ -130,6 +120,17 @@ func pollSpotify() {
 
 	// Start the main Loop
 	for _ = range c {
+		if !pollingSpotify {
+			dbDevice := Device{}
+			if err := db.First(&dbDevice).Error; err != nil {
+				// Assume no Device is Set
+				logger.Fatal().Msg("Something went wrong getting device after stopping polling!")
+			} else {
+				dbDevice.Active = false
+				db.Save(&dbDevice)
+			}
+			break
+		}
 		var playerState *spotify.PlayerState
 		// Check Expiry
 		if m, _ := time.ParseDuration("30s"); time.Until(oauthToken.Expiry) < m {

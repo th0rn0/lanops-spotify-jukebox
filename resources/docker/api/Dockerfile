@@ -14,6 +14,6 @@ COPY api/ .
 
 RUN go build -ldflags='-s -w -extldflags "-static"' -o /spotify-api
 
-EXPOSE 8080
+EXPOSE 8888
 
 CMD [ "/spotify-api" ]
