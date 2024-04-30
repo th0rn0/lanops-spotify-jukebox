@@ -31,7 +31,7 @@ jobs:
           file: resources/docker/api/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox-api:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox:api-latest
   
   build-ui:
     runs-on: ubuntu-latest
@@ -58,4 +58,4 @@ jobs:
           file: resources/docker/ui/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox-ui:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox:ui-latest
