@@ -29,6 +29,24 @@
 					"response": []
 				},
 				{
+					"name": "stop",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/player/stop",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"player",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "volume",
 					"request": {
 						"method": "POST",
@@ -430,7 +448,7 @@
 		"basic": [
 			{
 				"key": "password",
-				"value": "changeme",
+				"value": "{{password}}",
 				"type": "string"
 			},
 			{
@@ -462,14 +480,13 @@
 	],
 	"variable": [
 		{
-			"key": "accessKey",
-			"value": "",
-			"type": "string"
-		},
-		{
 			"key": "apiUrl",
 			"value": "http://localhost:8888",
 			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "changeme"
 		}
 	]
 }
