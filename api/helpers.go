@@ -11,11 +11,11 @@ import (
 func getNextSong() (Track, error) {
 	var nextTrack Track
 	var err error
-	if voteToSkipEnabled {
-		nextTrack, err = getNextSongRandom()
-	} else {
-		nextTrack, err = getNextSongByVotes()
-	}
+	// if voteToSkipEnabled {
+	// 	nextTrack, err = getNextSongRandom()
+	// } else {
+	nextTrack, err = getNextSongByVotes()
+	// }
 	if err != nil {
 		// Assume no record - get from fallback playlist
 		nextTrack = assignFallback(nextTrack)
