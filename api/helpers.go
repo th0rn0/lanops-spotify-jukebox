@@ -11,7 +11,11 @@ import (
 func getNextSong() (Track, error) {
 	var nextTrack Track
 	var err error
-	nextTrack, err = getNextSongByVotes()
+	if voteToSkipEnabled {
+		nextTrack, err = getNextSongRandom()
+	} else {
+		nextTrack, err = getNextSongByVotes()
+	}
 	if err != nil {
 		// Assume no record - get from fallback playlist
 		nextTrack = assignFallback(nextTrack)
@@ -32,6 +36,14 @@ func getNextSongExcludeURI(excludeUri spotify.URI) (Track, error) {
 		fallbackPlaylist.Active = false
 	}
 	return nextTrack, nil
+}
+
+func getNextSongRandom() (Track, error) {
+	var track Track
+	if err := db.Raw("SELECT * FROM tracks ORDER BY RAND()").First(&track).Error; err != nil {
+		return track, err
+	}
+	return track, nil
 }
 
 func getNextSongByVotes() (Track, error) {
