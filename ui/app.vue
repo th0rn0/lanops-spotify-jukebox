@@ -38,7 +38,7 @@
 
     const playlist = ref([]);
     const nowPlaying = ref({});
-    const skipText = ref("Vote song is shit");
+    const skipText = ref("Vote song uploader is a cunt");
     
     async function refreshPlaylist () {
         playlist.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks`).catch((error) => error.data)
@@ -48,10 +48,10 @@
         try {
             await $fetch(`${runtimeConfig.public.apiEndpoint}/votes/skip`, {method: 'POST', body: { uri: nowPlaying.value.uri }})
             skipText.value = "Order received, Obergruppenführer";
-            setTimeout(() => skipText.value = "Vote song is shit", 10000)
+            setTimeout(() => skipText.value = "Vote song uploader is a cunt", 10000)
         } catch (error) {
             skipText.value = "Chill out, music hitler";
-            setTimeout(() => skipText.value = "Vote song is shit", 10000)
+            setTimeout(() => skipText.value = "Vote song uploader is a cunt", 10000)
         }
         refreshPlaylist();
     }
