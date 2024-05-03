@@ -14,7 +14,7 @@ func getNextSong() (Track, error) {
 	if voteToSkipEnabled {
 		nextTrack, err = getNextSongRandom()
 	} else {
-	nextTrack, err = getNextSongByVotes()
+		nextTrack, err = getNextSongByVotes()
 	}
 	if err != nil {
 		// Assume no record - get from fallback playlist
@@ -28,7 +28,11 @@ func getNextSong() (Track, error) {
 func getNextSongExcludeURI(excludeUri spotify.URI) (Track, error) {
 	var nextTrack Track
 	var err error
-	nextTrack, err = getNextSongByVotesExcludeURI(excludeUri)
+	if voteToSkipEnabled {
+		nextTrack, err = getNextSongRandomExcludeURI(excludeUri)
+	} else {
+		nextTrack, err = getNextSongByVotesExcludeURI(excludeUri)
+	}
 	if err != nil {
 		// Assume no record - get from fallback playlist
 		nextTrack = assignFallback(nextTrack)
@@ -41,6 +45,14 @@ func getNextSongExcludeURI(excludeUri spotify.URI) (Track, error) {
 func getNextSongRandom() (Track, error) {
 	var track Track
 	if err := db.Raw("SELECT * FROM tracks ORDER BY random()").First(&track).Error; err != nil {
+		return track, err
+	}
+	return track, nil
+}
+
+func getNextSongRandomExcludeURI(excludeUri spotify.URI) (Track, error) {
+	var track Track
+	if err := db.Raw("SELECT * FROM tracks AND uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
 		return track, err
 	}
 	return track, nil
