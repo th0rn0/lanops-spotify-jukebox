@@ -27,6 +27,7 @@
                 </h5>
             </div>
             <div class="btn-group-vertical" role="group" aria-label="Basic example">
+                <button type="button" class="btn btn-success btn-lg"  @click="voteUp">{{ upVoteText }}</button>
                 <button type="button" class="btn btn-danger btn-lg"  @click="voteDown">{{ skipText }}</button>
             </div>
         </div>
@@ -38,10 +39,22 @@
 
     const playlist = ref([]);
     const nowPlaying = ref({});
+    const upVoteText = ref("Upvote this bop");
+    const upVoteShitpost = [
+        "Upgrade to LanOps premium™ to unlock this feature",
+        "Shit taste, no thanks",
+        'Song "upvoted"',
+        "Purchase a lanops box and key for a chance to unlock upvotes"
+    ]
     const skipText = ref("Vote song uploader is a cunt");
     
     async function refreshPlaylist () {
         playlist.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks`).catch((error) => error.data)
+    }
+
+    async function voteUp() {
+        upVoteText.value =  upVoteShitpost[Math.floor(Math.random() * upVoteShitpost.length)];
+
     }
 
     async function voteDown() {
