@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
       - 
         name: Discord Webhook Action - Build Start
-        uses: tsickert/discord-webhook@v5.3.0
+        uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           embed-title: ${{ github.repository }} API - Build Started!
@@ -42,7 +42,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox:api-latest
       - 
         name: Discord Webhook Action - Build Success
-        uses: tsickert/discord-webhook@v5.3.0
+        uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           embed-title: ${{ github.repository }} API - Build Success!
@@ -51,7 +51,7 @@ jobs:
       - 
         name: Discord Webhook Action - Build Failure
         if: failure()
-        uses: tsickert/discord-webhook@v5.3.0
+        uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           embed-title: ${{ github.repository }} API - Build Failure!
@@ -66,7 +66,7 @@ jobs:
         uses: actions/checkout@v4
       - 
         name: Discord Webhook Action - Build Start
-        uses: tsickert/discord-webhook@v5.3.0
+        uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           embed-title: ${{ github.repository }} UI - Build Started!
@@ -94,7 +94,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox:ui-latest
       - 
         name: Discord Webhook Action - Build Success
-        uses: tsickert/discord-webhook@v5.3.0
+        uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           embed-title: ${{ github.repository }} UI - Build Success!
@@ -103,7 +103,7 @@ jobs:
       - 
         name: Discord Webhook Action - Build Failure
         if: failure()
-        uses: tsickert/discord-webhook@v5.3.0
+        uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           embed-title: ${{ github.repository }} UI - Build Failure!
