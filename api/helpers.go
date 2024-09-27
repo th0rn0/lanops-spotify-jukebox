@@ -44,7 +44,26 @@ func getNextSongExcludeURI(excludeUri spotify.URI) (Track, error) {
 
 func getNextSongRandom() (Track, error) {
 	var track Track
-	if err := db.Raw("SELECT * FROM tracks ORDER BY random()").First(&track).Error; err != nil {
+	track, err := getNextCreedSong()
+	if err != nil {
+		if err := db.Raw("SELECT * FROM tracks ORDER BY random()").First(&track).Error; err != nil {
+			return track, err
+		}
+	}
+	return track, nil
+}
+
+func getNextCreedSong() (Track, error) {
+	var track Track
+	if err := db.Raw("SELECT * FROM tracks WHERE artist == 'Creed' ORDER BY random()").First(&track).Error; err != nil {
+		return track, err
+	}
+	return track, nil
+}
+
+func getNextCreedSongExcludeURI(excludeUri spotify.URI) (Track, error) {
+	var track Track
+	if err := db.Raw("SELECT * FROM tracks WHERE artist == 'Creed' AND  uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
 		return track, err
 	}
 	return track, nil
@@ -52,8 +71,11 @@ func getNextSongRandom() (Track, error) {
 
 func getNextSongRandomExcludeURI(excludeUri spotify.URI) (Track, error) {
 	var track Track
-	if err := db.Raw("SELECT * FROM tracks WHERE uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
-		return track, err
+	track, err := getNextCreedSongExcludeURI(excludeUri)
+	if err != nil {
+		if err := db.Raw("SELECT * FROM tracks WHERE uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
+			return track, err
+		}
 	}
 	return track, nil
 }
