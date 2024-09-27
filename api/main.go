@@ -73,7 +73,7 @@ func init() {
 	db.AutoMigrate(&BannedTrack{})
 
 	// Load Banned Words
-	bannedWordsFile, err := os.Open("../resources/banned/words.txt")
+	bannedWordsFile, err := os.Open("templates/banned-words.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -94,7 +94,7 @@ func init() {
 	}
 
 	// Load Banned Tracks
-	bannedTracksFile, err := os.Open("../resources/banned/tracks.txt")
+	bannedTracksFile, err := os.Open("templates/banned-tracks.txt")
 	if err != nil {
 		panic(err)
 	}
