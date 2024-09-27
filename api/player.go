@@ -60,6 +60,14 @@ func handlePlayer(c *gin.Context) {
 		currentDevice.Volume = handleTrackVolumeInput.Volume
 	case "skip":
 		track, _ := getNextSongExcludeURI(currentTrackURI)
+		banQuery := c.Query("ban")
+		if banQuery == "true" {
+			_, err := addBannedTrack(currentTrackURI)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, err)
+				return
+			}
+		}
 		playerOpt.URIs = []spotify.URI{track.URI}
 		err = client.NextOpt(ctx, &playerOpt)
 		if err != nil {
@@ -68,19 +76,12 @@ func handlePlayer(c *gin.Context) {
 			return
 		}
 		if !fallbackPlaylist.Active {
-			if err := db.First(&track, Track{URI: currentTrackURI}).Error; err != nil {
+			var currentTrack Track
+			if err := db.First(&currentTrack, Track{URI: currentTrackURI}).Error; err != nil {
 				c.JSON(http.StatusNotFound, "Track Not Found")
 				return
 			}
-			if err := db.Unscoped().Delete(&track).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, err)
-				return
-			}
-		}
-		banQuery := c.Query("ban")
-		if banQuery == "true" {
-			_, err := addBannedTrack(currentTrackURI)
-			if err != nil {
+			if err := db.Unscoped().Delete(&currentTrack).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, err)
 				return
 			}
