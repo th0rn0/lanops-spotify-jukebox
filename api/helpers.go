@@ -63,7 +63,7 @@ func getNextCreedSong() (Track, error) {
 
 func getNextCreedSongExcludeURI(excludeUri spotify.URI) (Track, error) {
 	var track Track
-	if err := db.Raw("SELECT * FROM tracks WHERE artist == 'Creed' AND  uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
+	if err := db.Raw("SELECT * FROM tracks WHERE artist == 'Creed' AND uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
 		return track, err
 	}
 	return track, nil
