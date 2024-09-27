@@ -77,6 +77,14 @@ func handlePlayer(c *gin.Context) {
 				return
 			}
 		}
+		banQuery := c.Query("ban")
+		if banQuery == "true" {
+			_, err := addBannedTrack(currentTrackURI)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, err)
+				return
+			}
+		}
 	}
 
 	c.JSON(http.StatusAccepted, "Ok: "+action)
