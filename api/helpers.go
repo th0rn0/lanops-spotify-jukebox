@@ -82,7 +82,7 @@ func getNextSongByVotesExcludeURI(excludeUri spotify.URI) (Track, error) {
 
 func getNextButtRockSong() (Track, error) {
 	var track Track
-	if err := db.Raw("SELECT * FROM tracks WHERE (artist == 'Creed' OR artist == 'Nickelback' OR artist 'Puddle Of Mudd') ORDER BY random()").First(&track).Error; err != nil {
+	if err := db.Raw("SELECT * FROM tracks WHERE (artist == 'Creed' OR artist == 'Nickelback' OR artist == 'Puddle Of Mudd') ORDER BY random()").First(&track).Error; err != nil {
 		return track, err
 	}
 	return track, nil
@@ -90,7 +90,7 @@ func getNextButtRockSong() (Track, error) {
 
 func getNextButtRockSongExcludeURI(excludeUri spotify.URI) (Track, error) {
 	var track Track
-	if err := db.Raw("SELECT * FROM tracks WHERE (artist == 'Creed' OR artist == 'Nickelback' OR artist 'Puddle Of Mudd') AND uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
+	if err := db.Raw("SELECT * FROM tracks WHERE (artist == 'Creed' OR artist == 'Nickelback' OR artist == 'Puddle Of Mudd') AND uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
 		return track, err
 	}
 	return track, nil
