@@ -44,7 +44,7 @@ func getNextSongExcludeURI(excludeUri spotify.URI) (Track, error) {
 
 func getNextSongRandom() (Track, error) {
 	var track Track
-	track, err := getNextCreedSong()
+	track, err := getNextButtRockSong()
 	if err != nil {
 		if err := db.Raw("SELECT * FROM tracks ORDER BY random()").First(&track).Error; err != nil {
 			return track, err
@@ -53,25 +53,9 @@ func getNextSongRandom() (Track, error) {
 	return track, nil
 }
 
-func getNextCreedSong() (Track, error) {
-	var track Track
-	if err := db.Raw("SELECT * FROM tracks WHERE artist == 'Creed' ORDER BY random()").First(&track).Error; err != nil {
-		return track, err
-	}
-	return track, nil
-}
-
-func getNextCreedSongExcludeURI(excludeUri spotify.URI) (Track, error) {
-	var track Track
-	if err := db.Raw("SELECT * FROM tracks WHERE artist == 'Creed' AND uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
-		return track, err
-	}
-	return track, nil
-}
-
 func getNextSongRandomExcludeURI(excludeUri spotify.URI) (Track, error) {
 	var track Track
-	track, err := getNextCreedSongExcludeURI(excludeUri)
+	track, err := getNextButtRockSongExcludeURI(excludeUri)
 	if err != nil {
 		if err := db.Raw("SELECT * FROM tracks WHERE uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
 			return track, err
@@ -91,6 +75,22 @@ func getNextSongByVotes() (Track, error) {
 func getNextSongByVotesExcludeURI(excludeUri spotify.URI) (Track, error) {
 	var track Track
 	if err := db.Raw("SELECT * FROM tracks WHERE votes = ( SELECT MAX(votes) FROM tracks ) AND uri != ?", excludeUri).First(&track).Error; err != nil {
+		return track, err
+	}
+	return track, nil
+}
+
+func getNextButtRockSong() (Track, error) {
+	var track Track
+	if err := db.Raw("SELECT * FROM tracks WHERE (artist == 'Creed' OR artist == 'Nickelback') ORDER BY random()").First(&track).Error; err != nil {
+		return track, err
+	}
+	return track, nil
+}
+
+func getNextButtRockSongExcludeURI(excludeUri spotify.URI) (Track, error) {
+	var track Track
+	if err := db.Raw("SELECT * FROM tracks WHERE (artist == 'Creed' OR artist == 'Nickelback') AND uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
 		return track, err
 	}
 	return track, nil
