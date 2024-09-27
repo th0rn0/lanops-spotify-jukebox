@@ -10,9 +10,13 @@ import (
 )
 
 func handleTrack(c *gin.Context) {
+	// var bannedWords = [2]string{"ram ranch", "fart"}
+	var bannedWords []BannedWord
 	var handleTrackInput HandleTrackInput
 	// var playerState *spotify.PlayerState
 	// var track Track
+
+	db.Find(&bannedWords)
 
 	ctx := c.Request.Context()
 	action := c.Param("action")
@@ -34,6 +38,20 @@ func handleTrack(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, err)
 			return
 		}
+
+		// Check for Banned Filter
+		for _, artist := range track.Artists {
+			if containsBannedWord(artist.Name) {
+				c.JSON(http.StatusBadRequest, "Fuck off")
+				return
+			}
+		}
+
+		if containsBannedWord(track.Name) || isBannedTrack(track.URI) || track.Duration > 600000 {
+			c.JSON(http.StatusBadRequest, "Fuck off")
+			return
+		}
+
 		// Get Track Images
 		trackImages := []TrackImage{}
 		for _, image := range track.Album.Images {

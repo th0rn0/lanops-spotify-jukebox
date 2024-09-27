@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -66,6 +69,50 @@ func init() {
 	db.AutoMigrate(&TrackImage{})
 	db.AutoMigrate(&Device{})
 	db.AutoMigrate(&LoginToken{})
+	db.AutoMigrate(&BannedWord{})
+	db.AutoMigrate(&BannedTrack{})
+
+	// Load Banned Words
+	bannedWordsFile, err := os.Open("../resources/banned/words.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer bannedWordsFile.Close()
+
+	scannerBannedWords := bufio.NewScanner(bannedWordsFile)
+	for scannerBannedWords.Scan() {
+		if !containsBannedWord(scannerBannedWords.Text()) {
+			_, err := addBannedWord(fmt.Sprintf("%v", scannerBannedWords.Text()))
+			if err != nil {
+				logger.Fatal().Err(err).Msg("Cannot Set Banned Words")
+			}
+		}
+	}
+
+	if err := scannerBannedWords.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Load Banned Tracks
+	bannedTracksFile, err := os.Open("../resources/banned/tracks.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer bannedTracksFile.Close()
+
+	scannerBannedTracks := bufio.NewScanner(bannedTracksFile)
+	for scannerBannedTracks.Scan() {
+		if !isBannedTrack(spotify.URI(fmt.Sprintf("%v", scannerBannedTracks.Text()))) {
+			_, err := addBannedTrack(spotify.URI(fmt.Sprintf("%v", scannerBannedTracks.Text())))
+			if err != nil {
+				logger.Fatal().Err(err).Msg("Cannot Set Banned Words")
+			}
+		}
+	}
+
+	if err := scannerBannedTracks.Err(); err != nil {
+		log.Fatal(err)
+	}
 
 	// Load Spotify API
 	auth = spotifyauth.New(

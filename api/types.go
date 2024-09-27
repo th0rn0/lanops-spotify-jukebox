@@ -56,7 +56,8 @@ type HandlePlayerVolumeInput struct {
 }
 
 type HandleTrackInput struct {
-	URI spotify.URI `json:"uri"`
+	URI    spotify.URI `json:"uri"`
+	Banned bool        `json:"banned"`
 }
 
 type HandleVoteInput struct {
@@ -91,6 +92,16 @@ func (t *Track) BeforeDelete(tx *gorm.DB) (err error) {
 		tx.Model(&TrackImage{}).Unscoped().Delete(&image)
 	}
 	return
+}
+
+type BannedWord struct {
+	ID   uint   `gorm:"primarykey"`
+	Word string `json:"word"`
+}
+
+type BannedTrack struct {
+	ID       uint `gorm:"primarykey"`
+	TrackURI spotify.URI
 }
 
 type LoginToken struct {
