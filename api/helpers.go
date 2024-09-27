@@ -52,7 +52,7 @@ func getNextSongRandom() (Track, error) {
 
 func getNextSongRandomExcludeURI(excludeUri spotify.URI) (Track, error) {
 	var track Track
-	if err := db.Raw("SELECT * FROM tracks AND uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
+	if err := db.Raw("SELECT * FROM tracks WHERE uri != ? ORDER BY random()", excludeUri).First(&track).Error; err != nil {
 		return track, err
 	}
 	return track, nil
