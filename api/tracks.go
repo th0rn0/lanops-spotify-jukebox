@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -39,7 +38,6 @@ func handleTrack(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, err)
 			return
 		}
-		fmt.Println(track)
 
 		// Check for Banned Filter
 		for _, artist := range track.Artists {
