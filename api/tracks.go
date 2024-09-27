@@ -41,13 +41,13 @@ func handleTrack(c *gin.Context) {
 
 		// Check for Banned Filter
 		for _, artist := range track.Artists {
-			if containsBannedWord(artist.Name) {
+			if containsBannedWord(strings.ToLower(artist.Name)) {
 				c.JSON(http.StatusBadRequest, "Fuck off")
 				return
 			}
 		}
 
-		if containsBannedWord(track.Name) || isBannedTrack(track.URI) || track.Duration > 600000 {
+		if containsBannedWord(strings.ToLower(track.Name)) || isBannedTrack(track.URI) || track.Duration > 600000 {
 			c.JSON(http.StatusBadRequest, "Fuck off")
 			return
 		}
