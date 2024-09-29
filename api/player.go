@@ -171,6 +171,10 @@ func pollSpotify() {
 			client = spotify.New(auth.Client(context.Background(), &oauth2.Token{AccessToken: oauthToken.AccessToken}))
 		}
 
+		// Set Player State
+		client.Repeat(context.Background(), "off")
+		client.Shuffle(context.Background(), false)
+
 		// Get Player State
 		playerState, err = client.PlayerState(context.Background())
 		if err != nil {
@@ -238,6 +242,7 @@ func pollSpotify() {
 				DeviceID: &currentDevice.ID,
 				URIs:     []spotify.URI{track.URI},
 			}
+
 			err = client.PlayOpt(context.Background(), &playerOpt)
 
 			if err != nil {
