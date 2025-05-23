@@ -42,11 +42,11 @@
     const upVoteText = ref("Upvote this bop");
     const upVoteShitpost = [
         "Upgrade to LanOps premium™ to unlock this feature",
-        "Shit taste, no thanks",
+        "Awful taste, no thanks",
         'Song "upvoted"',
         "Purchase a lanops box and key for a chance to unlock upvotes"
     ]
-    const skipText = ref("Vote song uploader is a cunt");
+    const skipText = ref("Vote down");
     
     async function refreshPlaylist () {
         playlist.value = await $fetch(runtimeConfig.public.apiEndpoint + `/tracks`).catch((error) => error.data)
@@ -60,11 +60,11 @@
     async function voteDown() {
         try {
             await $fetch(`${runtimeConfig.public.apiEndpoint}/votes/skip`, {method: 'POST', body: { uri: nowPlaying.value.uri }})
-            skipText.value = "Order received, Obergruppenführer";
-            setTimeout(() => skipText.value = "Vote song uploader is a cunt", 10000)
+            skipText.value = "Voted down";
+            setTimeout(() => skipText.value = "Vote down", 10000)
         } catch (error) {
-            skipText.value = "Chill out, music hitler";
-            setTimeout(() => skipText.value = "Vote song uploader is a cunt", 10000)
+            skipText.value = "On cooldown";
+            setTimeout(() => skipText.value = "Vote down", 10000)
         }
         refreshPlaylist();
     }
