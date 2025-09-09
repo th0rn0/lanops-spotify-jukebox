@@ -2,14 +2,14 @@
 
 Spotify Jukebox System inititally created for [LanOps](https://lanops.co.uk). 
 
-## API
+## Backend
 
 Written in GO using the https://github.com/zmb3/spotify package. Refer to the postman collection for the endpoints
 
 ### Features
 
 - Add/Remove/Skip Tracks
-- Voting system - Vote songs up to the top of the queue or remove them entirely
+- Voting system - Vote To skip songs
 - Admin Controls
 - Volume Controls
 - Works with any Spotify Device
@@ -22,18 +22,19 @@ Written in GO using the https://github.com/zmb3/spotify package. Refer to the po
     - https://developer.spotify.com/documentation/web-api/concepts/apps -
 - Copy the example env file ```cp .env.example .env```
 - Fill in the ```.env``` file
-    - Fallback Playlist can be any playlist. Use the full URI. If you wish to add queued songs to the playlist make sure the account being used has the sufficient permissions to the playlist. Make sure there is atleast 10 songs in this playlist
+    - Fallback Playlist can be any playlist. Use the full URI. If you wish to add queued songs to the playlist make sure the account being used has the sufficient permissions to the playlist.
 
 ### Install Dependencies
 ```bash
-    cd api
+    cd backend
     go mod tidy
 ```
 
 ### Run
 
 ```bash
-    go run .
+    cd backend
+    go run ./cmd/spotify-jukebox
 ```
 
 ### Usage
@@ -60,5 +61,6 @@ Admin routes are behing Basic Auth Endpoints. The User is ```admin``` and the pa
 ### Run
 
 ```bash
+    cd ui
     npm run dev
 ```

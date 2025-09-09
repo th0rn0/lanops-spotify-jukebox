@@ -36,7 +36,7 @@
     const runtimeConfig = useRuntimeConfig()
 
     async function addToPlaylist() {
-        await $fetch(runtimeConfig.public.apiEndpoint + "/tracks/add", {method: 'POST', body: { uri: `spotify:track:${props.track.id}` }});
+        await $fetch(runtimeConfig.public.apiEndpoint + "/tracks/add", {method: 'POST', body: { id: `${props.track.id}` }});
         emit('songAdded');
     }
 </script>
