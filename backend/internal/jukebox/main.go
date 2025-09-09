@@ -30,8 +30,6 @@ type Client struct {
 		active bool
 		votes  int
 	}
-	// skip               bool
-	// voteToSkip         int
 	paused bool
 }
 

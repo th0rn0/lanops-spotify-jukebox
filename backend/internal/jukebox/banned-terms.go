@@ -18,7 +18,6 @@ type BannedTerm struct {
 }
 
 func (c *Client) LoadBannedTermsFromFile() error {
-	// TODO - add a different location option to CFG
 	bannedTracksFile, err := os.Open(c.cfg.BannedTerms.TracksFileLocation)
 	if err != nil {
 		return err

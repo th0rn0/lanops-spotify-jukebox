@@ -13,18 +13,14 @@ func (c *Client) Run() error {
 	c.log.Info().Msg("Checking for Valid Spotify token...")
 	for {
 		time.Sleep(5 * time.Second)
-
 		if c.hasAuthToken() {
 			c.log.Info().Msg("Spotify Token found - Attempting Login")
 			if err := c.Login(c.spotify.token); err != nil {
 				c.log.Err(err).Msg("Error attempting login in to Client with saved token. Please login again")
 			}
 		}
-
 		if c.spotify.token != nil && c.spotify.client != nil {
-
 			token, err := c.spotify.client.Token()
-
 			if err == nil && token != nil {
 				c.log.Info().Msg("Valid Spotify token found! Starting Spotify polling!")
 				break
