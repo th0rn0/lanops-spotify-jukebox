@@ -26,14 +26,14 @@ Written in GO using the https://github.com/zmb3/spotify package. Refer to the po
 
 ### Install Dependencies
 ```bash
-    cd backend
+    cd service
     go mod tidy
 ```
 
 ### Run
 
 ```bash
-    cd backend
+    cd service
     go run ./cmd/spotify-jukebox
 ```
 
@@ -45,7 +45,7 @@ To start the player goto the ```/player/start``` endpoint
 
 Admin routes are behing Basic Auth Endpoints. The User is ```admin``` and the password is set in the env.
 
-## UI
+## Frontend
 
 ### Prerequisites
 

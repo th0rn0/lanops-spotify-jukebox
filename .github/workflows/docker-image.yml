@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build-api:
+  build-service:
     runs-on: ubuntu-latest
     steps:
       -
@@ -19,7 +19,7 @@ jobs:
         uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          embed-title: ${{ github.repository }} API - Build Started!
+          embed-title: ${{ github.repository }} Service - Build Started!
           embed-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           embed-description: ${{ github.event.head_commit.message }}
       -
@@ -32,20 +32,20 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       -
-        name: Build and push API
+        name: Build and push Service
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: resources/docker/api/Dockerfile
+          file: resources/docker/service/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox:api-latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lanops-spotify-jukebox:service-latest
       - 
         name: Discord Webhook Action - Build Success
         uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          embed-title: ${{ github.repository }} API - Build Success!
+          embed-title: ${{ github.repository }} Service - Build Success!
           embed-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           embed-description: ${{ github.event.head_commit.message }}
       - 
@@ -54,7 +54,7 @@ jobs:
         uses: tsickert/discord-webhook@v6.0.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          embed-title: ${{ github.repository }} API - Build Failure!
+          embed-title: ${{ github.repository }} Service - Build Failure!
           embed-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           embed-description: ${{ github.event.head_commit.message }}
   

@@ -1,13 +1,13 @@
 version: '3.9'
 
 services:
-  backend:
+  service:
     build:
       context: .
-      dockerfile: resources/docker/backend/Dockerfile
+      dockerfile: resources/docker/service/Dockerfile
     volumes:
-      - ./backend:/app
-    env_file: $PWD/backend/.env
+      - ./service:/app
+    env_file: $PWD/service/.env
     command: go run .
     ports:
       - 8888:8888
@@ -40,12 +40,12 @@ services:
   go:
     build:
       context: .
-      dockerfile: resources/docker/backend/Dockerfile
+      dockerfile: resources/docker/service/Dockerfile
     entrypoint: [ "go" ]
     working_dir: /app
     command: [ "-v" ]
     volumes:
-      - ./backend:/app
+      - ./service:/app
 
 networks:
   internal:
