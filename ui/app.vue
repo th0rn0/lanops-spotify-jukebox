@@ -19,11 +19,11 @@
         <h3>Now Playing</h3>
         <div class="d-flex justify-content-between">
             <div class="d-flex">
-                <img :src="nowPlaying.album.images[2].url" />
+                <img :src="nowPlaying.images[2].url" />
                 <h5 class="ps-3">
                     {{ nowPlaying.name }}
                     <br />
-                    <small class="text-muted">{{ nowPlaying.artists[0].name }}</small>
+                    <small class="text-muted">{{ nowPlaying.artist }}</small>
                 </h5>
             </div>
             <div class="btn-group-vertical" role="group" aria-label="Basic example">

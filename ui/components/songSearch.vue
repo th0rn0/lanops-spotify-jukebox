@@ -7,7 +7,7 @@
     </form>
     <table class="table table-dark table-striped">
         <tbody>
-            <SearchItem v-for="track in searchResult.track" :track="track" @songAdded="$emit('songAdded');" />
+            <SearchItem v-for="track in searchResult.tracks" :track="track" @songAdded="$emit('songAdded');" />
         </tbody>
     </table>
 </template>
