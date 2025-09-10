@@ -106,17 +106,17 @@ docker run -d \
     image: th0rn0/lanops-spotify-jukebox:service-latest
     restart: unless-stopped
     environment:
-      - DB_PATH=/db/jukebox.db
-      - VOTE_COUNT_TO_SKIP=5
-      - SPOTIFY_ID=
-      - SPOTIFY_SECRET=
-      - SPOTIFY_FALLBACK_PLAYLIST_ID=
-      - API_AUTH_CALLBACK_URL=
-      - API_ADMIN_USERNAME=
-      - API_ADMIN_PASSWORD=
-      - API_PORT=20
-      - BANNED_TERMS_TRACKS_FILE_LOCATION=
-      - BANNED_TERMS_WORDS_FILE_LOCATION=
+      DB_PATH: /db/jukebox.db
+      VOTE_COUNT_TO_SKIP: 5
+      SPOTIFY_ID: 
+      SPOTIFY_SECRET: 
+      SPOTIFY_FALLBACK_PLAYLIST_ID: 
+      API_AUTH_CALLBACK_URL: 
+      API_ADMIN_USERNAME: 
+      API_ADMIN_PASSWORD: 
+      API_PORT: 8888
+      BANNED_TERMS_TRACKS_FILE_LOCATION: 
+      BANNED_TERMS_WORDS_FILE_LOCATION: 
     ports:
       - 8888:8888
     volumes:

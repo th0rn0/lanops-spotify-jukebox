@@ -24,5 +24,5 @@ func (s Client) AuthCallback(c *gin.Context) {
 }
 
 func (s Client) AuthLogin(c *gin.Context) {
-	c.JSON(http.StatusOK, s.jbc.GetAuthUrl())
+	c.Redirect(302, s.jbc.GetAuthUrl())
 }
