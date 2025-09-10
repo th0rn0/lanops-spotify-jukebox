@@ -108,62 +108,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "get all devices",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{apiUrl}}/device/all",
-							"host": [
-								"{{apiUrl}}"
-							],
-							"path": [
-								"device",
-								"all"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "get current device",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{apiUrl}}/device",
-							"host": [
-								"{{apiUrl}}"
-							],
-							"path": [
-								"device"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "set current device",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n   \"device_id\":  \"68e2142bc377685bd457684ef5819f1675ee8a1c\"\r\n}"
-						},
-						"url": {
-							"raw": "{{apiUrl}}/device",
-							"host": [
-								"{{apiUrl}}"
-							],
-							"path": [
-								"device"
-							]
-						}
-					},
-					"response": []
 				}
 			],
 			"event": [
@@ -190,60 +134,6 @@
 		{
 			"name": "votes",
 			"item": [
-				{
-					"name": "add",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{apiUrl}}/votes/add",
-							"host": [
-								"{{apiUrl}}"
-							],
-							"path": [
-								"votes",
-								"add"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "remove",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{apiUrl}}/votes/remove",
-							"host": [
-								"{{apiUrl}}"
-							],
-							"path": [
-								"votes",
-								"remove"
-							]
-						}
-					},
-					"response": []
-				},
 				{
 					"name": "skip",
 					"request": {
@@ -326,7 +216,7 @@
 					"response": []
 				},
 				{
-					"name": "get by uri",
+					"name": "get by id",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -357,7 +247,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"uri\": \"spotify:track:6rsoBvxrlxdmqJyGPPciyq\"\r\n}",
+							"raw": "{\r\n    \"id\": \"74WIE2htPZwxx4HgGhpf8i\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -481,12 +371,15 @@
 	"variable": [
 		{
 			"key": "apiUrl",
-			"value": "http://localhost:8888",
-			"type": "string"
+			"value": "http://localhost:8888"
 		},
 		{
 			"key": "password",
 			"value": "changeme"
+		},
+		{
+			"key": "apiUrl",
+			"value": "http://localhost:8888"
 		}
 	]
 }
