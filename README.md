@@ -80,6 +80,7 @@ Entry Point:
 ### Docker
 
 ```docker build -f resources/docker/service/Dockerfile .```
+
 ```
 docker run -d \
   --name jukebox-service \
