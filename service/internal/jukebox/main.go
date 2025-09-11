@@ -59,7 +59,7 @@ func New(cfg config.Config, db *gorm.DB, log *zerolog.Logger) (Client, error) {
 		},
 		current: Track{},
 		shuffle: false,
-		active:  true,
+		active:  false,
 		paused:  false,
 	}
 	token, err := client.getAuthToken()

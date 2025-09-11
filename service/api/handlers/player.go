@@ -17,6 +17,16 @@ func (s Client) PlayerStop(c *gin.Context) {
 	c.JSON(http.StatusOK, false)
 }
 
+func (s Client) PlayerSkip(c *gin.Context) {
+	s.jbc.SetSkip(true)
+	c.JSON(http.StatusOK, true)
+}
+
+func (s Client) PlayerPause(c *gin.Context) {
+	s.jbc.SetPaused(true)
+	c.JSON(http.StatusOK, true)
+}
+
 type PlayerVolumeInput struct {
 	Volume int `json:"volume"`
 }
@@ -34,15 +44,5 @@ func (s Client) PlayerVolume(c *gin.Context) {
 	if err := s.jbc.SetVolume(playerVolumeInput.Volume); err != nil {
 		c.JSON(http.StatusInternalServerError, "Something went wrong")
 	}
-	c.JSON(http.StatusOK, true)
-}
-
-func (s Client) PlayerSkip(c *gin.Context) {
-	s.jbc.SetSkip(true)
-	c.JSON(http.StatusOK, true)
-}
-
-func (s Client) PlayerPause(c *gin.Context) {
-	s.jbc.SetPaused(true)
 	c.JSON(http.StatusOK, true)
 }

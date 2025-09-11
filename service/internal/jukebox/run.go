@@ -44,6 +44,7 @@ func (c *Client) Run() error {
 			if c.paused {
 				c.spotify.client.Pause(context.Background())
 				for {
+					time.Sleep(5 * time.Second)
 					if !c.paused {
 						break
 					}
@@ -133,6 +134,12 @@ func (c *Client) Run() error {
 			}
 			if playerState.Playing {
 				c.spotify.client.Pause(context.Background())
+			}
+			for {
+				time.Sleep(5 * time.Second)
+				if c.active {
+					break
+				}
 			}
 		}
 	}
