@@ -42,6 +42,7 @@ func main() {
 	db.AutoMigrate(&jukebox.Track{})
 	db.AutoMigrate(&jukebox.TrackImage{})
 	db.AutoMigrate(&jukebox.BannedTerm{})
+	db.AutoMigrate(&jukebox.AutoStart{})
 	db.AutoMigrate(&oauth2.Token{})
 
 	jukeboxClient, err := jukebox.New(cfg, db, &logger)

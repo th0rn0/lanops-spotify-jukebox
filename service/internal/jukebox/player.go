@@ -6,12 +6,21 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
+type AutoStart struct {
+	Enabled bool
+}
+
 func (c *Client) SetFallbackPlaylist(id string) {
 	c.fallbackPlaylistId = spotify.ID(id)
 }
 
 func (c *Client) SetActive(state bool) {
 	c.active = state
+	// Clear AutoStart Table
+	c.db.Where("1 = 1").Delete(&AutoStart{})
+	if state {
+		c.db.Create(AutoStart{Enabled: true})
+	}
 }
 
 func (c *Client) SetVolume(volume int) (err error) {
@@ -35,4 +44,12 @@ func (c *Client) SetSkip(state bool) {
 
 func (c *Client) SetPaused(state bool) {
 	c.paused = state
+}
+
+func (c *Client) checkForAutoStart() {
+	var autoStart AutoStart
+	err := c.db.First(&autoStart).Error
+	if err == nil && autoStart.Enabled {
+		c.active = true
+	}
 }

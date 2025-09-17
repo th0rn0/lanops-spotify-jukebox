@@ -71,6 +71,7 @@ func New(cfg config.Config, db *gorm.DB, log *zerolog.Logger) (Client, error) {
 		client.setAuthToken(token, false)
 	}
 	client.resetSkip()
+	client.checkForAutoStart()
 
 	return client, err
 }
