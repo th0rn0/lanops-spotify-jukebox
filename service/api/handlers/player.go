@@ -47,10 +47,14 @@ func (s Client) PlayerSetVolume(c *gin.Context) {
 	c.JSON(http.StatusOK, true)
 }
 
+type PlayerGetVolumeOutput struct {
+	Volume int `json:"volume"`
+}
+
 func (s Client) PlayerGetVolume(c *gin.Context) {
 	volume, err := s.jbc.GetVolume()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, "Something went wrong")
 	}
-	c.JSON(http.StatusOK, volume)
+	c.JSON(http.StatusOK, PlayerGetVolumeOutput{Volume: volume})
 }
