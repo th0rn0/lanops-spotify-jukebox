@@ -68,7 +68,8 @@ func SetupRouter(cfg config.Config, c *jukebox.Client, logger zerolog.Logger) *g
 	// Player
 	authorized.POST("/player/start", handlers.PlayerStart)
 	authorized.POST("/player/stop", handlers.PlayerStop)
-	authorized.POST("/player/volume", handlers.PlayerVolume)
+	authorized.POST("/player/volume", handlers.PlayerSetVolume)
+	authorized.GET("/player/volume", handlers.PlayerGetVolume)
 	authorized.POST("/player/skip", handlers.PlayerSkip)
 	authorized.POST("/player/pause", handlers.PlayerPause)
 

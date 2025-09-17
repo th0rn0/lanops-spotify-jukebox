@@ -21,6 +21,14 @@ func (c *Client) SetVolume(volume int) (err error) {
 	return nil
 }
 
+func (c *Client) GetVolume() (volume int, err error) {
+	playerState, err := c.spotify.client.PlayerState(context.Background())
+	if err != nil {
+		return volume, err
+	}
+	return int(playerState.Device.Volume), nil
+}
+
 func (c *Client) SetSkip(state bool) {
 	c.skip.active = state
 }

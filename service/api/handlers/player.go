@@ -27,12 +27,12 @@ func (s Client) PlayerPause(c *gin.Context) {
 	c.JSON(http.StatusOK, true)
 }
 
-type PlayerVolumeInput struct {
+type PlayerSetVolumeInput struct {
 	Volume int `json:"volume"`
 }
 
-func (s Client) PlayerVolume(c *gin.Context) {
-	var playerVolumeInput PlayerVolumeInput
+func (s Client) PlayerSetVolume(c *gin.Context) {
+	var playerVolumeInput PlayerSetVolumeInput
 	if err := c.ShouldBindJSON(&playerVolumeInput); err != nil {
 		c.JSON(http.StatusInternalServerError, "Cannot Marshal JSON")
 		return
@@ -45,4 +45,12 @@ func (s Client) PlayerVolume(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, "Something went wrong")
 	}
 	c.JSON(http.StatusOK, true)
+}
+
+func (s Client) PlayerGetVolume(c *gin.Context) {
+	volume, err := s.jbc.GetVolume()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, "Something went wrong")
+	}
+	c.JSON(http.StatusOK, volume)
 }

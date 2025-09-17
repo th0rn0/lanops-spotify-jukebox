@@ -66,6 +66,7 @@ func New(cfg config.Config, db *gorm.DB, log *zerolog.Logger) (Client, error) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return client, err
 	}
+
 	if token != nil {
 		client.setAuthToken(token, false)
 	}
