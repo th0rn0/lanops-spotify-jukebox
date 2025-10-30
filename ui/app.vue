@@ -1,5 +1,5 @@
 <template>
-    <div class="container vh-100" style="padding-bottom: 150px;">
+    <div class="container-fluid" style="padding-bottom: 150px;">
         <div class="row h-100">
             <div class="col h-100" style="overflow-y: auto;">
                 <h3 class="text-white">Playlist</h3>
