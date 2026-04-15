@@ -6,6 +6,7 @@ trigger:
   event:
     - push
     - pull_request
+    - tag
 
 steps:
 
@@ -29,20 +30,11 @@ steps:
       - |
         curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO Service - Build Started!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
     when:
-      branch:
-        - main
       event:
         - push
-
-  - name: prepare-service-tags
-    image: alpine:3.20
-    commands:
-      - echo "latest,$(date +%Y-%m-%d-%H-%M-%S)" > .tags
-    when:
+        - tag
       branch:
         - main
-      event:
-        - push
 
   - name: build-push-service
     image: plugins/docker
@@ -51,6 +43,8 @@ steps:
       dockerfile: resources/docker/service/Dockerfile
       context: .
       platforms: linux/amd64,linux/arm64
+      tags:
+        - latest
       username:
         from_secret: dockerhub_username
       password:
@@ -60,6 +54,24 @@ steps:
         - main
       event:
         - push
+
+  - name: build-push-service-release
+    image: plugins/docker
+    settings:
+      repo: th0rn0/lanops-spotify-jukebox-service
+      dockerfile: resources/docker/service/Dockerfile
+      context: .
+      platforms: linux/amd64,linux/arm64
+      tags:
+        - latest
+        - ${DRONE_TAG}
+      username:
+        from_secret: dockerhub_username
+      password:
+        from_secret: dockerhub_token
+    when:
+      event:
+        - tag
 
   - name: build-service-pr
     image: plugins/docker
@@ -82,10 +94,11 @@ steps:
       - |
         curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO Service - Build Success!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
     when:
-      branch:
-        - main
       event:
         - push
+        - tag
+      branch:
+        - main
       status:
         - success
 
@@ -99,10 +112,11 @@ steps:
       - |
         curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO Service - Build Failure!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
     when:
-      branch:
-        - main
       event:
         - push
+        - tag
+      branch:
+        - main
       status:
         - failure
 
@@ -118,20 +132,11 @@ steps:
       - |
         curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO UI - Build Started!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
     when:
-      branch:
-        - main
       event:
         - push
-
-  - name: prepare-ui-tags
-    image: alpine:3.20
-    commands:
-      - echo "latest,$(date +%Y-%m-%d-%H-%M-%S)" > .tags
-    when:
+        - tag
       branch:
         - main
-      event:
-        - push
 
   - name: build-push-ui
     image: plugins/docker
@@ -143,6 +148,8 @@ steps:
       dockerfile: resources/docker/ui/Dockerfile
       context: .
       platforms: linux/amd64,linux/arm64
+      tags:
+        - latest
       build_args_from_env:
         - API_ENDPOINT
       username:
@@ -154,6 +161,29 @@ steps:
         - main
       event:
         - push
+
+  - name: build-push-ui-release
+    image: plugins/docker
+    environment:
+      API_ENDPOINT:
+        from_secret: api_endpoint
+    settings:
+      repo: th0rn0/lanops-spotify-jukebox-ui
+      dockerfile: resources/docker/ui/Dockerfile
+      context: .
+      platforms: linux/amd64,linux/arm64
+      tags:
+        - latest
+        - ${DRONE_TAG}
+      build_args_from_env:
+        - API_ENDPOINT
+      username:
+        from_secret: dockerhub_username
+      password:
+        from_secret: dockerhub_token
+    when:
+      event:
+        - tag
 
   - name: build-ui-pr
     image: plugins/docker
@@ -181,10 +211,11 @@ steps:
       - |
         curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO UI - Build Success!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
     when:
-      branch:
-        - main
       event:
         - push
+        - tag
+      branch:
+        - main
       status:
         - success
 
@@ -198,9 +229,10 @@ steps:
       - |
         curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO UI - Build Failure!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
     when:
-      branch:
-        - main
       event:
         - push
+        - tag
+      branch:
+        - main
       status:
         - failure
