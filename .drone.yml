@@ -37,7 +37,7 @@ steps:
   - name: prepare-service-tags
     image: alpine:3.20
     commands:
-      - echo "service-latest,service-$(date +%Y-%m-%d-%H-%M-%S)" > .tags
+      - echo "latest,$(date +%Y-%m-%d-%H-%M-%S)" > .tags
     when:
       branch:
         - main
@@ -47,7 +47,7 @@ steps:
   - name: build-push-service
     image: plugins/docker
     settings:
-      repo: th0rn0/lanops-spotify-jukebox
+      repo: th0rn0/lanops-spotify-jukebox-service
       dockerfile: resources/docker/service/Dockerfile
       context: .
       platforms: linux/amd64,linux/arm64
@@ -64,7 +64,7 @@ steps:
   - name: build-service-pr
     image: plugins/docker
     settings:
-      repo: th0rn0/lanops-spotify-jukebox
+      repo: th0rn0/lanops-spotify-jukebox-service
       dockerfile: resources/docker/service/Dockerfile
       context: .
       dry_run: true
@@ -126,7 +126,7 @@ steps:
   - name: prepare-ui-tags
     image: alpine:3.20
     commands:
-      - echo "ui-latest,ui-$(date +%Y-%m-%d-%H-%M-%S)" > .tags
+      - echo "latest,$(date +%Y-%m-%d-%H-%M-%S)" > .tags
     when:
       branch:
         - main
@@ -139,7 +139,7 @@ steps:
       API_ENDPOINT:
         from_secret: api_endpoint
     settings:
-      repo: th0rn0/lanops-spotify-jukebox
+      repo: th0rn0/lanops-spotify-jukebox-ui
       dockerfile: resources/docker/ui/Dockerfile
       context: .
       platforms: linux/amd64,linux/arm64
@@ -161,7 +161,7 @@ steps:
       API_ENDPOINT:
         from_secret: api_endpoint
     settings:
-      repo: th0rn0/lanops-spotify-jukebox
+      repo: th0rn0/lanops-spotify-jukebox-ui
       dockerfile: resources/docker/ui/Dockerfile
       context: .
       dry_run: true
