@@ -1,0 +1,126 @@
+kind: pipeline
+type: docker
+name: ci
+
+trigger:
+  branch:
+    - main
+  event:
+    - push
+
+steps:
+
+# ── Build & Push Service ──────────────────────────────────────────────────────
+
+  - name: discord-build-service-start
+    image: curlimages/curl:8.7.1
+    failure: ignore
+    environment:
+      DISCORD_WEBHOOK_URL:
+        from_secret: discord_webhook_url
+    commands:
+      - |
+        curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO Service - Build Started!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
+
+  - name: prepare-service-tags
+    image: alpine:3.20
+    commands:
+      - echo "service-latest,service-$(date +%Y-%m-%d-%H-%M-%S)" > .tags
+
+  - name: build-push-service
+    image: plugins/docker
+    settings:
+      repo: th0rn0/lanops-spotify-jukebox
+      dockerfile: resources/docker/service/Dockerfile
+      context: .
+      platforms: linux/amd64,linux/arm64
+      username:
+        from_secret: dockerhub_username
+      password:
+        from_secret: dockerhub_token
+
+  - name: discord-build-service-success
+    image: curlimages/curl:8.7.1
+    failure: ignore
+    environment:
+      DISCORD_WEBHOOK_URL:
+        from_secret: discord_webhook_url
+    commands:
+      - |
+        curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO Service - Build Success!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
+    when:
+      status:
+        - success
+
+  - name: discord-build-service-failure
+    image: curlimages/curl:8.7.1
+    failure: ignore
+    environment:
+      DISCORD_WEBHOOK_URL:
+        from_secret: discord_webhook_url
+    commands:
+      - |
+        curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO Service - Build Failure!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
+    when:
+      status:
+        - failure
+
+# ── Build & Push UI ───────────────────────────────────────────────────────────
+
+  - name: discord-build-ui-start
+    image: curlimages/curl:8.7.1
+    failure: ignore
+    environment:
+      DISCORD_WEBHOOK_URL:
+        from_secret: discord_webhook_url
+    commands:
+      - |
+        curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO UI - Build Started!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
+
+  - name: prepare-ui-tags
+    image: alpine:3.20
+    commands:
+      - echo "ui-latest,ui-$(date +%Y-%m-%d-%H-%M-%S)" > .tags
+
+  - name: build-push-ui
+    image: plugins/docker
+    environment:
+      API_ENDPOINT:
+        from_secret: api_endpoint
+    settings:
+      repo: th0rn0/lanops-spotify-jukebox
+      dockerfile: resources/docker/ui/Dockerfile
+      context: .
+      platforms: linux/amd64,linux/arm64
+      build_args_from_env:
+        - API_ENDPOINT
+      username:
+        from_secret: dockerhub_username
+      password:
+        from_secret: dockerhub_token
+
+  - name: discord-build-ui-success
+    image: curlimages/curl:8.7.1
+    failure: ignore
+    environment:
+      DISCORD_WEBHOOK_URL:
+        from_secret: discord_webhook_url
+    commands:
+      - |
+        curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO UI - Build Success!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
+    when:
+      status:
+        - success
+
+  - name: discord-build-ui-failure
+    image: curlimages/curl:8.7.1
+    failure: ignore
+    environment:
+      DISCORD_WEBHOOK_URL:
+        from_secret: discord_webhook_url
+    commands:
+      - |
+        curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d "{\"embeds\":[{\"title\":\"$DRONE_REPO UI - Build Failure!\",\"url\":\"$DRONE_BUILD_LINK\",\"description\":\"$DRONE_COMMIT_MESSAGE\"}]}"
+    when:
+      status:
+        - failure
