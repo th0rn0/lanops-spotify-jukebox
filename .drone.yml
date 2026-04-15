@@ -1,6 +1,6 @@
 kind: pipeline
 type: docker
-name: ci
+name: service
 
 trigger:
   event:
@@ -10,17 +10,7 @@ trigger:
 
 steps:
 
-# ── Test ──────────────────────────────────────────────────────────────────────
-
-  - name: test-service
-    image: golang:1.24
-    commands:
-      - cd service
-      - go test ./...
-
-# ── Build & Push Service ──────────────────────────────────────────────────────
-
-  - name: discord-build-service-start
+  - name: discord-start
     image: curlimages/curl:8.7.1
     failure: ignore
     environment:
@@ -36,7 +26,22 @@ steps:
       branch:
         - main
 
-  - name: build-push-service
+  - name: lint
+    image: golang:1.24
+    environment:
+      GOFLAGS: -buildvcs=false
+    commands:
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+      - cd service
+      - golangci-lint run --timeout=5m ./...
+
+  - name: test
+    image: golang:1.24
+    commands:
+      - cd service
+      - go test ./...
+
+  - name: build-push
     image: plugins/docker
     settings:
       repo: th0rn0/lanops-spotify-jukebox-service
@@ -55,7 +60,7 @@ steps:
       event:
         - push
 
-  - name: build-push-service-release
+  - name: build-push-release
     image: plugins/docker
     settings:
       repo: th0rn0/lanops-spotify-jukebox-service
@@ -73,7 +78,7 @@ steps:
       event:
         - tag
 
-  - name: build-service-pr
+  - name: build-pr
     image: plugins/docker
     settings:
       repo: th0rn0/lanops-spotify-jukebox-service
@@ -84,7 +89,7 @@ steps:
       event:
         - pull_request
 
-  - name: discord-build-service-success
+  - name: discord-success
     image: curlimages/curl:8.7.1
     failure: ignore
     environment:
@@ -102,7 +107,7 @@ steps:
       status:
         - success
 
-  - name: discord-build-service-failure
+  - name: discord-failure
     image: curlimages/curl:8.7.1
     failure: ignore
     environment:
@@ -120,9 +125,21 @@ steps:
       status:
         - failure
 
-# ── Build & Push UI ───────────────────────────────────────────────────────────
+---
 
-  - name: discord-build-ui-start
+kind: pipeline
+type: docker
+name: ui
+
+trigger:
+  event:
+    - push
+    - pull_request
+    - tag
+
+steps:
+
+  - name: discord-start
     image: curlimages/curl:8.7.1
     failure: ignore
     environment:
@@ -138,7 +155,7 @@ steps:
       branch:
         - main
 
-  - name: build-push-ui
+  - name: build-push
     image: plugins/docker
     environment:
       API_ENDPOINT:
@@ -162,7 +179,7 @@ steps:
       event:
         - push
 
-  - name: build-push-ui-release
+  - name: build-push-release
     image: plugins/docker
     environment:
       API_ENDPOINT:
@@ -185,7 +202,7 @@ steps:
       event:
         - tag
 
-  - name: build-ui-pr
+  - name: build-pr
     image: plugins/docker
     environment:
       API_ENDPOINT:
@@ -201,7 +218,7 @@ steps:
       event:
         - pull_request
 
-  - name: discord-build-ui-success
+  - name: discord-success
     image: curlimages/curl:8.7.1
     failure: ignore
     environment:
@@ -219,7 +236,7 @@ steps:
       status:
         - success
 
-  - name: discord-build-ui-failure
+  - name: discord-failure
     image: curlimages/curl:8.7.1
     failure: ignore
     environment:

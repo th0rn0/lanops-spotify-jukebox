@@ -42,14 +42,14 @@ func (c *Client) Run() error {
 
 		if c.active {
 			if c.paused {
-				c.spotify.client.Pause(context.Background())
+				_ = c.spotify.client.Pause(context.Background())
 				for {
 					time.Sleep(5 * time.Second)
 					if !c.paused {
 						break
 					}
 				}
-				c.spotify.client.Play(context.Background())
+				_ = c.spotify.client.Play(context.Background())
 			}
 			// Reset the PlayerState
 			playerState, err := c.spotify.client.PlayerState(context.Background())
@@ -82,10 +82,10 @@ func (c *Client) Run() error {
 				queue, _ := c.spotify.client.GetQueue(context.Background())
 				// For what ever reason, the items in the queue for ONE SONG is 10
 				if len(queue.Items) > 10 {
-					c.spotify.client.Pause(context.Background())
+					_ = c.spotify.client.Pause(context.Background())
 				}
-				c.spotify.client.Repeat(context.Background(), "off")
-				c.spotify.client.Shuffle(context.Background(), false)
+				_ = c.spotify.client.Repeat(context.Background(), "off")
+				_ = c.spotify.client.Shuffle(context.Background(), false)
 
 				// Process the Next Track
 				if (!playerState.Playing || playerState.Progress == 0) || c.shouldSkip() {
@@ -133,7 +133,7 @@ func (c *Client) Run() error {
 				c.log.Err(err).Msg("SOMETHING WENT WRONG GETTING PLAYER STATE")
 			}
 			if playerState.Playing {
-				c.spotify.client.Pause(context.Background())
+				_ = c.spotify.client.Pause(context.Background())
 			}
 			for {
 				time.Sleep(5 * time.Second)

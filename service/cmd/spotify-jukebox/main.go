@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"lanops/spotify-jukebox/api"
-	"lanops/spotify-jukebox/internal/channels"
 	"lanops/spotify-jukebox/internal/config"
 	"lanops/spotify-jukebox/internal/jukebox"
 	"os"
@@ -19,8 +18,6 @@ import (
 var (
 	logger zerolog.Logger
 	cfg    config.Config
-	msgCh  = make(chan channels.MsgCh, 20)
-	db     *gorm.DB
 )
 
 func main() {
@@ -39,11 +36,15 @@ func main() {
 		logger.Fatal().Err(err).Msg("Error Connecting to Database")
 	}
 
-	db.AutoMigrate(&jukebox.Track{})
-	db.AutoMigrate(&jukebox.TrackImage{})
-	db.AutoMigrate(&jukebox.BannedTerm{})
-	db.AutoMigrate(&jukebox.AutoStart{})
-	db.AutoMigrate(&oauth2.Token{})
+	if err := db.AutoMigrate(
+		&jukebox.Track{},
+		&jukebox.TrackImage{},
+		&jukebox.BannedTerm{},
+		&jukebox.AutoStart{},
+		&oauth2.Token{},
+	); err != nil {
+		logger.Fatal().Err(err).Msg("Error Migrating Database")
+	}
 
 	jukeboxClient, err := jukebox.New(cfg, db, &logger)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -61,7 +62,9 @@ func main() {
 	logger.Info().Msg("Starting Spotify Jukebox API")
 	api := api.SetupRouter(cfg, &jukeboxClient, logger)
 	go func() {
-		api.Run(fmt.Sprintf(":%s", cfg.Api.Port))
+		if err := api.Run(fmt.Sprintf(":%s", cfg.Api.Port)); err != nil {
+			logger.Fatal().Err(err).Msg("API server exited")
+		}
 	}()
 
 	logger.Info().Msg("Starting Spotify Jukebox Client")

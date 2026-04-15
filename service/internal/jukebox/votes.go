@@ -5,7 +5,7 @@ func (c *Client) VoteToSkip() {
 }
 
 func (c *Client) shouldSkip() bool {
-	if c.skip.active == true || c.skip.votes >= c.cfg.VoteCountToSkip {
+	if c.skip.active || c.skip.votes >= c.cfg.VoteCountToSkip {
 		return true
 	}
 	return false
