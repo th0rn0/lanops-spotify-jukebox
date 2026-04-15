@@ -28,6 +28,8 @@ steps:
 
   - name: lint
     image: golang:1.24
+    environment:
+      GOFLAGS: -buildvcs=false
     commands:
       - go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
       - cd service
