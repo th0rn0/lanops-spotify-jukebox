@@ -10,6 +10,14 @@ trigger:
 
 steps:
 
+# ── Lint ──────────────────────────────────────────────────────────────────────
+
+  - name: lint-service
+    image: golangci/golangci-lint:v1.64.8
+    commands:
+      - cd service
+      - golangci-lint run ./...
+
 # ── Test ──────────────────────────────────────────────────────────────────────
 
   - name: test-service

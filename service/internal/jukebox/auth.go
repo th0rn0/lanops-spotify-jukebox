@@ -44,10 +44,7 @@ func (c *Client) setAuthToken(token *oauth2.Token, saveToDb bool) error {
 }
 
 func (c *Client) hasAuthToken() bool {
-	if c.spotify.token == nil {
-		return false
-	}
-	return true
+	return c.spotify.token != nil
 }
 
 func (c *Client) Login(token *oauth2.Token) error {
@@ -59,8 +56,7 @@ func (c *Client) Login(token *oauth2.Token) error {
 	if err != nil {
 		return err
 	}
-	c.setAuthToken(token, true)
-	return nil
+	return c.setAuthToken(token, true)
 }
 
 func (c *Client) saveAuthTokenToDb() error {
