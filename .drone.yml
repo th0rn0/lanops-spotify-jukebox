@@ -9,6 +9,14 @@ trigger:
 
 steps:
 
+# ── Test ──────────────────────────────────────────────────────────────────────
+
+  - name: test-service
+    image: golang:1.24
+    commands:
+      - cd service
+      - go test ./...
+
 # ── Build & Push Service ──────────────────────────────────────────────────────
 
   - name: discord-build-service-start
